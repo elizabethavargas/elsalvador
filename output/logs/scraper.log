@@ -1,0 +1,183 @@
+2026-03-02 20:49:48,069 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:49:48,069 [INFO] el_salvador_dataset — EL SALVADOR POLITICAL TEXT DATASET BUILDER
+2026-03-02 20:49:48,069 [INFO] el_salvador_dataset — Started: 2026-03-02T20:49:48.069526 | Date filter: True
+2026-03-02 20:49:48,070 [INFO] el_salvador_dataset — Relevance threshold: 2 | Key events: 20
+2026-03-02 20:49:48,070 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:49:48,070 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:49:48,070 [INFO] el_salvador_dataset — STRATEGY: XML Sitemaps (full site article inventories)
+2026-03-02 20:49:48,070 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:49:48,072 [INFO] el_salvador_dataset — Sitemap: https://elfaro.net/sitemap.xml
+2026-03-02 20:49:48,523 [WARNING] el_salvador_dataset — HTTP 404 for https://elfaro.net/sitemap.xml
+2026-03-02 20:49:48,523 [INFO] el_salvador_dataset — Sitemap El Faro: 0 total URLs
+2026-03-02 20:49:48,524 [INFO] el_salvador_dataset — Sitemap El Faro: 0 after filtering
+2026-03-02 20:49:48,552 [INFO] el_salvador_dataset — Sitemap El Faro: 0 records
+2026-03-02 20:49:48,552 [INFO] el_salvador_dataset — Sitemap: https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 20:49:48,715 [WARNING] el_salvador_dataset — HTTP 404 for https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 20:49:48,715 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 total URLs
+2026-03-02 20:49:48,715 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 after filtering
+2026-03-02 20:49:48,715 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 records
+2026-03-02 20:49:48,715 [INFO] el_salvador_dataset — Sitemap: https://www.elsalvador.com/sitemap.xml
+2026-03-02 20:49:48,817 [INFO] el_salvador_dataset —   Sitemap index: 189 sub-sitemaps at https://www.elsalvador.com/sitemap.xml
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — EL SALVADOR POLITICAL TEXT DATASET BUILDER
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — Started: 2026-03-02T20:50:59.635101 | Date filter: True
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — Relevance threshold: 2 | Key events: 20
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — STRATEGY: XML Sitemaps (full site article inventories)
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 20:50:59,635 [INFO] el_salvador_dataset — Sitemap: https://elfaro.net/sitemap.xml
+2026-03-02 20:51:00,108 [WARNING] el_salvador_dataset — HTTP 404 for https://elfaro.net/sitemap.xml
+2026-03-02 20:51:00,108 [INFO] el_salvador_dataset — Sitemap El Faro: 0 total URLs
+2026-03-02 20:51:00,108 [INFO] el_salvador_dataset — Sitemap El Faro: 0 after filtering
+2026-03-02 20:51:00,161 [INFO] el_salvador_dataset — Sitemap El Faro: 0 records
+2026-03-02 20:51:00,162 [INFO] el_salvador_dataset — Sitemap: https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 20:51:00,296 [WARNING] el_salvador_dataset — HTTP 404 for https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 20:51:00,296 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 total URLs
+2026-03-02 20:51:00,297 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 after filtering
+2026-03-02 20:51:00,297 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 records
+2026-03-02 20:51:00,297 [INFO] el_salvador_dataset — Sitemap: https://www.elsalvador.com/sitemap.xml
+2026-03-02 20:51:00,386 [INFO] el_salvador_dataset —   Sitemap index: 189 sub-sitemaps at https://www.elsalvador.com/sitemap.xml
+2026-03-02 20:51:14,099 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 92359 total URLs
+2026-03-02 20:51:19,604 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 80989 after filtering
+2026-03-02 20:51:19,864 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/ninos-migrantes-dicen-pasar-hambre-y-fri%c2%ado-en-celdas-de-estados-unidos/501225/2018/
+2026-03-02 20:51:21,486 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/al-menos-13-muertos-al-hundirse-barco-turi%c2%adstico-en-missouri/501989/2018/
+2026-03-02 20:51:23,104 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/mueren-tres-vi%c2%adctimas-del-tiroteo-en-toronto/502698/2018/
+2026-03-02 20:51:24,726 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-entretenimiento/h-viral-entretenimiento/mujer-de-68-anos-cumple-sueno-de-trabajar-en-walking-dead%c2%9d/502853/2018/
+2026-03-02 20:51:26,365 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-nacional/abogado-de-el-chapo%c2%9d-acusa-a-ee-uu-de-retener-pruebas/503534/2018/
+2026-03-02 20:51:27,990 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/sorprenden-a-anciana-con-heroi%c2%adna-en-la-frontera-eeuu-mexico/508154/2018/
+2026-03-02 20:51:29,615 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/polici%c2%ada-de-long-island-arresta-a-pandillero-de-la-ms/514171/2018/
+2026-03-02 20:51:31,237 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/ultima-hora-reportan-varias-vi%c2%adctimas%c2%80%c2%9d-en-tiroteo-activo-en-maryland/520306/2018/
+2026-03-02 20:51:32,889 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/tirador-toma-a-ninos-como-rehenes-y-deja-un-polici%c2%ada-muerto-en-carolina-del-sur/524599/2018/
+2026-03-02 20:51:34,533 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/juez-federal-prohi%c2%adbe-al-gobierno-de-eeuu-cancelar-tps/524624/2018/
+2026-03-02 20:51:36,147 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/h-noticias-videos/que-ofrece-ciudad-barrios-previo-a-la-canonizacion-de-monsen%cc%83or-romero/526576/2018/
+2026-03-02 20:51:37,771 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/huracan-michael-causa-destruccion-inimaginable%c2%9d-en-florida/527359/2018/
+2026-03-02 20:51:39,396 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/centenares-de-salvadoren%cc%83os-realizan-peregrinacion-previo-a-canonizacion-de-monsen%cc%83or-romero/528220/2018/
+2026-03-02 20:51:41,025 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/h-noticias-videos/mas-de-100-honduren%cc%83os-indocumentados-aun-sin-poder-cruzar-la-frontera-el-amatillo/529938/2018/
+2026-03-02 20:51:42,654 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/migrantes-hondurenos-se-enfrentan-con-la-polici%c2%ada-mexicana-en-frontera/530408/2018/
+2026-03-02 20:51:44,270 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/video-muestra-a-%c2%80doble%c2%80%c2%9d-como-jamal-khashoggi-para-encubrir-su-asesinato/531199/2018/
+2026-03-02 20:51:45,890 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/venezolanos-no%c2%ad-quieren-beneficencia-quieren-una-oportunidad-dice-angelina-jolie-en-su-visita-a-peru/531688/2018/
+2026-03-02 20:51:47,511 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-deportes/h-otros-deportes/con-hit-de-marti%c2%adnez-boston-ampli%c2%ada-ventaja-en-la-serie-mundial/532236/2018/
+2026-03-02 20:51:49,151 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-fotogalerias/h-entretenimiento-fotogalerias/el-principe-harry-y-meghan-markle%e2%80%8b-lucen-la-falda-tradicional-de-las-islas-de-tonga/532649/2018/
+2026-03-02 20:51:50,771 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-entretenimiento/h-espectaculos/ingrid-coronado-impacta-con-nuevo-look-tras-su-salida-de-venga-la-alegria%c2%ad%c2%ad%c2%ad%c2%ad%c2%ad%c2%ad/551182/2018/
+2026-03-02 20:51:52,392 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-fotogalerias/h-entretenimiento-fotogalerias/las-fotos-intimas-de-meghan-markle%e2%80%8b-antes-de-llegar-a-ser-duquesa/553538/2018/
+2026-03-02 20:51:54,019 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/el-salvador-decomiso-344-millones-en-cocaina-y-cuatro-%e2%80%8asemisumergibles/553842/2018/
+2026-03-02 20:51:56,118 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): Robo de combustible era una empresa paralela en México, dicen funcionarios | Not
+2026-03-02 20:51:57,308 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/hombre-echa-li%c2%adquido-inflamable-a-polici%c2%ada-y-le-prende-fuego/568337/2019/
+2026-03-02 20:51:58,923 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/nave-espacial-israeli%c2%ad-viaja-a-la-luna-en-mision-privada/570231/2019/
+2026-03-02 20:52:00,547 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/h-noticias-videos/nin%cc%83os-venezolanos-piden-reabrir-frontera-para-ir-a-la-escuela/571510/2019/
+2026-03-02 20:52:02,162 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/h-noticias-videos/gobierno-y-oposicion-nicaragu%cc%88enses-negociaran-salida-a-crisis/571520/2019/
+2026-03-02 20:52:03,777 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-entretenimiento/h-espectaculos/televisa-enfrenta-cri%c2%adticas-por-parodia-de-yalitza-aparicio/573007/2019/
+2026-03-02 20:52:05,399 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/theresa-may-renunciara-como-li%c2%adder-del-partido-conservador-el-7-de-junio/605913/2019/
+2026-03-02 20:52:07,018 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-entretenimiento/h-tecnologia/juego-de-nintendo-de-1987-podri%c2%ada-venderse-en-10000-dolares/626391/2019/
+2026-03-02 20:52:08,635 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-entretenimiento/h-viral-entretenimiento/video-hombre-se-ri%c2%ade-de-antiinmigrantes-en-una-reunion-de-concejo-en-arizona/628890/2019/
+2026-03-02 20:52:10,270 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/presunto-suicidio-del-magnate-jeffrey-epstein-acusado-de-trafico-sexual-de-menores-desata-teori%c2%adas-de-conspiracion/629375/2019/
+2026-03-02 20:52:11,891 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-deportes/h-otros-deportes/8-puntos-sobre-la-desaparicion-de-la-esquiadora-oli%c2%admpica-espanola-blanca-fernandez/636696/2019/
+2026-03-02 20:52:13,518 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-fotogalerias/h-noticias-fotogalerias/los-vestidos-de-1000-dolares-que-uso-ivanka-trump-en-su-gira-por-suramerica%e2%80%8b/637718/2019/
+2026-03-02 20:52:15,133 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/al-ritmo-de-regueton-cumbia-y-merengue-visitantes-de-los-presos-hacen-una-pijamada%c2%9d-en-carcel-de-guatemala/643009/2019/
+2026-03-02 20:52:16,787 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/expolici%c2%ada-mato-a-su-vecino-por-error-en-estados-unidos/645303/2019/
+2026-03-02 20:52:18,402 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/matan-a-testigo-del-caso-en-que-una-expolici%c2%ada-entro-al-apartamento-de-su-vecino-penso-que-era-un-extrano-y-lo-mato-por-error-en-estados-unidos/647119/2019/
+2026-03-02 20:52:20,051 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/juez-impide-negar-green-card%c2%9d-a-inmigrantes-pobres/648661/2019/
+2026-03-02 20:52:21,684 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/videos-potente-explosion-en-una-planta-qui%c2%admica-deja-tres-heridos-y-varios-evacuados-en-texas/662952/2019/
+2026-03-02 20:52:23,333 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/yo-no-habia-visto-ninguna-balacera-asi-salvo-en-las-peliculas%c2%9d-narra-testigo-sobre-tiroteo-en-mexico-en-el-que-mataron-a-22-personas/664895/2019/
+2026-03-02 20:52:24,977 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/mi-familia-y-yo-habi%c2%adamos-salido-de-alli%c2%ad-hace-20-minutos-algunos-turistas-escaparon-momentos-antes-de-erupcion-de-volcan-en-nueva-zelanda/666623/2019/
+2026-03-02 20:52:26,592 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/trump-tuitea-furioso-por-proceso-de-juicio-poli%c2%adtico/669463/2019/
+2026-03-02 20:52:28,219 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/en-vivo-camara-inicia-sesion-en-la-que-votara-si-abre-juicio-poli%c2%adtico-a-donald-trump/669474/2019/
+2026-03-02 20:52:29,837 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/otros-18-reos-mueren-en-carcel-de-honduras-en-un-nuevo-moti%c2%adn/671011/2019/
+2026-03-02 20:52:31,448 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/camara-baja-ee-uu-senado-cargos-juicio-poli%c2%adtico-donald-trump/677583/2020/
+2026-03-02 20:52:36,931 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): Edición especial “Coronavirus   El Salvador contra la pandemia” | Noticias de El
+2026-03-02 20:52:38,569 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): Nicaragüenses varados en El Salvador reciben donaciones | Noticias de El Salvado
+2026-03-02 20:52:42,038 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): ōNecesitamos conocer en quķ lugar estß situado el mayor contagio de las comunida
+2026-03-02 20:52:43,575 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): Autoridades capturan a medio centenar de pandilleros de la 18 sureþos | Noticias
+2026-03-02 20:52:45,194 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): Los salvadoreńos playeros cayeron en Portugal y pierden la posibilidad de ascend
+2026-03-02 20:52:46,844 [DEBUG] el_salvador_dataset — DROPPED (relevance=1): Las claves del duelo Alianza-¡guila, un cl·sico por el liderato del grupo A | No
+2026-03-02 20:52:48,540 [DEBUG] el_salvador_dataset — DROPPED (relevance=0): Personal de Salud vedado a hablar sobre su experiencia en la vacunación contra e
+2026-03-02 20:52:51,756 [DEBUG] el_salvador_dataset — DROPPED (relevance=0): En las playas y centros turísticos abarrotados está el enemigo oculto | Noticias
+2026-03-02 20:52:53,019 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-eldiariodehoy/juzgados-penales-incumple-otra-orden-judicial/874341/2021/
+2026-03-02 20:52:54,648 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-nacional/fiscal-general-de-la-republica-traslado-reforma-ley-organica-fiscales/874387/2021/
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — EL SALVADOR POLITICAL TEXT DATASET BUILDER
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — Started: 2026-03-02T21:01:13.294212 | Date filter: True
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — Relevance threshold: 4 | Key events: 20
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — STRATEGY: XML Sitemaps (full site article inventories)
+2026-03-02 21:01:13,294 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:01:13,295 [INFO] el_salvador_dataset — Sitemap: https://elfaro.net/sitemap.xml
+2026-03-02 21:01:13,786 [WARNING] el_salvador_dataset — HTTP 404 for https://elfaro.net/sitemap.xml
+2026-03-02 21:01:13,786 [INFO] el_salvador_dataset — Sitemap El Faro: 0 total URLs
+2026-03-02 21:01:13,787 [INFO] el_salvador_dataset — Sitemap El Faro: 0 after filtering
+2026-03-02 21:01:13,814 [INFO] el_salvador_dataset — Sitemap El Faro: 0 records
+2026-03-02 21:01:13,815 [INFO] el_salvador_dataset — Sitemap: https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 21:01:13,987 [WARNING] el_salvador_dataset — HTTP 404 for https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 21:01:13,987 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 total URLs
+2026-03-02 21:01:13,987 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 after filtering
+2026-03-02 21:01:13,987 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 records
+2026-03-02 21:01:13,988 [INFO] el_salvador_dataset — Sitemap: https://www.elsalvador.com/sitemap.xml
+2026-03-02 21:01:14,094 [INFO] el_salvador_dataset —   Sitemap index: 189 sub-sitemaps at https://www.elsalvador.com/sitemap.xml
+2026-03-02 21:01:21,280 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 92359 total URLs
+2026-03-02 21:01:26,826 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 80989 after filtering
+2026-03-02 21:01:27,050 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/ninos-migrantes-dicen-pasar-hambre-y-fri%c2%ado-en-celdas-de-estados-unidos/501225/2018/
+2026-03-02 21:01:28,662 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/al-menos-13-muertos-al-hundirse-barco-turi%c2%adstico-en-missouri/501989/2018/
+2026-03-02 21:01:30,269 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/mueren-tres-vi%c2%adctimas-del-tiroteo-en-toronto/502698/2018/
+2026-03-02 21:01:31,864 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-entretenimiento/h-viral-entretenimiento/mujer-de-68-anos-cumple-sueno-de-trabajar-en-walking-dead%c2%9d/502853/2018/
+2026-03-02 21:01:33,463 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-nacional/abogado-de-el-chapo%c2%9d-acusa-a-ee-uu-de-retener-pruebas/503534/2018/
+2026-03-02 21:01:35,082 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/sorprenden-a-anciana-con-heroi%c2%adna-en-la-frontera-eeuu-mexico/508154/2018/
+2026-03-02 21:01:36,682 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/polici%c2%ada-de-long-island-arresta-a-pandillero-de-la-ms/514171/2018/
+2026-03-02 21:01:38,283 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/ultima-hora-reportan-varias-vi%c2%adctimas%c2%80%c2%9d-en-tiroteo-activo-en-maryland/520306/2018/
+2026-03-02 21:01:39,897 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/tirador-toma-a-ninos-como-rehenes-y-deja-un-polici%c2%ada-muerto-en-carolina-del-sur/524599/2018/
+2026-03-02 21:01:41,518 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/juez-federal-prohi%c2%adbe-al-gobierno-de-eeuu-cancelar-tps/524624/2018/
+2026-03-02 21:01:43,121 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/h-noticias-videos/que-ofrece-ciudad-barrios-previo-a-la-canonizacion-de-monsen%cc%83or-romero/526576/2018/
+2026-03-02 21:01:44,720 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/huracan-michael-causa-destruccion-inimaginable%c2%9d-en-florida/527359/2018/
+2026-03-02 21:01:46,330 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/centenares-de-salvadoren%cc%83os-realizan-peregrinacion-previo-a-canonizacion-de-monsen%cc%83or-romero/528220/2018/
+2026-03-02 21:01:47,945 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-videos/h-noticias-videos/mas-de-100-honduren%cc%83os-indocumentados-aun-sin-poder-cruzar-la-frontera-el-amatillo/529938/2018/
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — EL SALVADOR POLITICAL TEXT DATASET BUILDER
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — Started: 2026-03-02T21:02:04.444055 | Date filter: True
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — Relevance threshold: 40 | Key events: 20
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — STRATEGY: XML Sitemaps (full site article inventories)
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:02:04,444 [INFO] el_salvador_dataset — Sitemap: https://elfaro.net/sitemap.xml
+2026-03-02 21:02:04,887 [WARNING] el_salvador_dataset — HTTP 404 for https://elfaro.net/sitemap.xml
+2026-03-02 21:02:04,888 [INFO] el_salvador_dataset — Sitemap El Faro: 0 total URLs
+2026-03-02 21:02:04,888 [INFO] el_salvador_dataset — Sitemap El Faro: 0 after filtering
+2026-03-02 21:02:04,943 [INFO] el_salvador_dataset — Sitemap El Faro: 0 records
+2026-03-02 21:02:04,943 [INFO] el_salvador_dataset — Sitemap: https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 21:02:05,077 [WARNING] el_salvador_dataset — HTTP 404 for https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 21:02:05,078 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 total URLs
+2026-03-02 21:02:05,078 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 after filtering
+2026-03-02 21:02:05,078 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 records
+2026-03-02 21:02:05,078 [INFO] el_salvador_dataset — Sitemap: https://www.elsalvador.com/sitemap.xml
+2026-03-02 21:02:05,181 [INFO] el_salvador_dataset —   Sitemap index: 189 sub-sitemaps at https://www.elsalvador.com/sitemap.xml
+2026-03-02 21:02:11,825 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 92359 total URLs
+2026-03-02 21:02:17,336 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 80989 after filtering
+2026-03-02 21:02:17,481 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/ninos-migrantes-dicen-pasar-hambre-y-fri%c2%ado-en-celdas-de-estados-unidos/501225/2018/
+2026-03-02 21:02:19,076 [WARNING] el_salvador_dataset — HTTP 403 for https://www.elsalvador.com/h-noticias/h-internacional/al-menos-13-muertos-al-hundirse-barco-turi%c2%adstico-en-missouri/501989/2018/
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — EL SALVADOR POLITICAL TEXT DATASET BUILDER
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — Started: 2026-03-02T21:07:14.920436 | Date filter: True
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — Relevance threshold: 40 | Key events: 20
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:07:14,920 [INFO] el_salvador_dataset — STRATEGY: XML Sitemaps (full site article inventories)
+2026-03-02 21:07:14,921 [INFO] el_salvador_dataset — ======================================================================
+2026-03-02 21:07:14,921 [INFO] el_salvador_dataset — Sitemap: https://elfaro.net/sitemap.xml
+2026-03-02 21:07:15,372 [WARNING] el_salvador_dataset — HTTP 404 for https://elfaro.net/sitemap.xml
+2026-03-02 21:07:15,373 [INFO] el_salvador_dataset — Sitemap El Faro: 0 total URLs
+2026-03-02 21:07:15,373 [INFO] el_salvador_dataset — Sitemap El Faro: 0 after filtering
+2026-03-02 21:07:15,467 [INFO] el_salvador_dataset — Sitemap El Faro: 0 records
+2026-03-02 21:07:15,467 [INFO] el_salvador_dataset — Sitemap: https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 21:07:15,670 [WARNING] el_salvador_dataset — HTTP 404 for https://www.laprensagrafica.com/sitemap.xml
+2026-03-02 21:07:15,670 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 total URLs
+2026-03-02 21:07:15,671 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 after filtering
+2026-03-02 21:07:15,671 [INFO] el_salvador_dataset — Sitemap La Prensa Gráfica: 0 records
+2026-03-02 21:07:15,671 [INFO] el_salvador_dataset — Sitemap: https://www.elsalvador.com/sitemap.xml
+2026-03-02 21:07:16,027 [INFO] el_salvador_dataset —   Sitemap index: 189 sub-sitemaps at https://www.elsalvador.com/sitemap.xml
+2026-03-02 21:12:04,081 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 92359 total URLs
+2026-03-02 21:12:09,717 [INFO] el_salvador_dataset — Sitemap El Diario de Hoy: 80989 after filtering
+2026-03-02 21:12:16,319 [ERROR] el_salvador_dataset — Request failed https://www.elsalvador.com/h-noticias/h-internacional/ninos-migrantes-dicen-pasar-hambre-y-fri%c2%ado-en-celdas-de-estados-unidos/501225/2018/: HTTPSConnectionPool(host='historico.elsalvador.com', port=443): Max retries exceeded with url: /historico/501225/ninos-migrantes-dicen-pasar-hambre-y-fri%C2%ADo-en-celdas-de-estados-unidos.html (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1123)')))
+2026-03-02 21:12:22,698 [ERROR] el_salvador_dataset — Request failed https://www.elsalvador.com/h-noticias/h-internacional/al-menos-13-muertos-al-hundirse-barco-turi%c2%adstico-en-missouri/501989/2018/: HTTPSConnectionPool(host='historico.elsalvador.com', port=443): Max retries exceeded with url: /historico/501989/al-menos-13-muertos-al-hundirse-barco-turi%C2%ADstico-en-missouri.html (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1123)')))
+2026-03-02 21:12:29,079 [ERROR] el_salvador_dataset — Request failed https://www.elsalvador.com/h-noticias/h-internacional/mueren-tres-vi%c2%adctimas-del-tiroteo-en-toronto/502698/2018/: HTTPSConnectionPool(host='historico.elsalvador.com', port=443): Max retries exceeded with url: /historico/502698/mueren-tres-vi%C2%ADctimas-del-tiroteo-en-toronto.html (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1123)')))
+2026-03-02 21:12:35,427 [ERROR] el_salvador_dataset — Request failed https://www.elsalvador.com/h-entretenimiento/h-viral-entretenimiento/mujer-de-68-anos-cumple-sueno-de-trabajar-en-walking-dead%c2%9d/502853/2018/: HTTPSConnectionPool(host='historico.elsalvador.com', port=443): Max retries exceeded with url: /historico/502853/mujer-de-68-anos-cumple-sueno-de-trabajar-en-walking-dead%C2%9D.html (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1123)')))
