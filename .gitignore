@@ -1,0 +1,7 @@
+# Output data — too large for git, find these locally in output/
+output/
+__pycache__/
+*.pyc
+.DS_Store
+gdelt_progress.json
+gdelt_urls.csv
