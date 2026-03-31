@@ -256,6 +256,8 @@ def scrape_sitemaps() -> list:
             url = entry["url"]
             if not utils.is_article_url(url) or _url_seen(url):
                 continue
+            if not utils.url_passes_prefilter(url, is_government=is_govt):
+                continue
             pub_date = None
             if entry["lastmod"]:
                 pub_date = utils.parse_date_flexible(entry["lastmod"])
@@ -331,6 +333,8 @@ def scrape_gdelt() -> list:
                         continue
                     norm = utils.normalize_url(url)
                     if norm in seen:
+                        continue
+                    if not utils.url_passes_prefilter(url):
                         continue
                     seen.add(norm)
                     sd = art.get("seendate", "")
@@ -451,6 +455,8 @@ def scrape_date_archives() -> list:
             for url in month_urls:
                 if _url_seen(url):
                     continue
+                if not utils.url_passes_prefilter(url, is_government=is_govt):
+                    continue
                 try:
                     rec = _fetch_and_parse_article(
                         url=url, source_key=src["source_key"],
@@ -498,6 +504,8 @@ def scrape_keyword_search() -> list:
                 empty = 0
                 for url in page_urls:
                     if _url_seen(url):
+                        continue
+                    if not utils.url_passes_prefilter(url):
                         continue
                     try:
                         rec = _fetch_and_parse_article(
@@ -592,6 +600,8 @@ def scrape_newspaper3k() -> list:
         count = 0
         for article in tqdm(articles, desc=f"n3k: {src['source_name']}", unit="art"):
             if _url_seen(article.url):
+                continue
+            if not utils.url_passes_prefilter(article.url):
                 continue
             try:
                 article.download()
