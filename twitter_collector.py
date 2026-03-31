@@ -108,13 +108,34 @@ ACCOUNTS = {
 # ─────────────────────────────────────────────
 # AUTH HEADER
 # ─────────────────────────────────────────────
+def _load_env_file(path: str):
+    """Parse a simple KEY=value .env file and populate os.environ."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+    except FileNotFoundError:
+        pass
+
+
 def get_headers() -> dict:
+    # Try loading from a .env file in the same directory as this script
+    _load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
     api_key = os.environ.get("TWITTERAPI_IO_KEY", "")
     if not api_key:
         raise EnvironmentError(
-            "TWITTERAPI_IO_KEY environment variable is not set.\n"
-            "Get your key at https://twitterapi.io\n"
-            "Then run:  export TWITTERAPI_IO_KEY='your_key_here'"
+            "API key not found. Do one of:\n"
+            "  1) Create a .env file next to this script:  TWITTERAPI_IO_KEY=your_key_here\n"
+            "  2) Export it in your shell:  export TWITTERAPI_IO_KEY='your_key_here'\n"
+            "Get a key at: https://twitterapi.io"
         )
     return {"X-API-Key": api_key}
 
