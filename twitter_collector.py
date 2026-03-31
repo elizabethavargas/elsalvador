@@ -295,7 +295,8 @@ def collect_account(headers, handle, account, seen_ids):
             print(f"    [!] empty response on page {page}, stopping")
             break
 
-        tweets = data.get("tweets") or []
+        # Response format: { "data": { "tweets": [...] }, "has_next_page": ..., "next_cursor": ... }
+        tweets = (data.get("data") or {}).get("tweets") or data.get("tweets") or []
         if not tweets:
             print(f"    [!] no tweets on page {page}, stopping")
             break
