@@ -234,35 +234,19 @@ def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
 
 
 # ─────────────────────────────────────────────
-# ACCOUNT CREATION DATE
+# YEAR PROBE
 # ─────────────────────────────────────────────
-def get_account_start(headers: dict, handle: str) -> tuple[int, int]:
+def year_has_tweets(headers: dict, handle: str, year: int) -> bool:
     """
-    Return (year, month) the Twitter account was created.
-    Falls back to (START_YEAR, 1) on any error so we still collect everything.
-    Costs 1 API call per account (~$0.00018).
+    Single API call to check whether `handle` has ANY tweets in `year`.
+    Returns True if at least one tweet exists, False if the year is empty.
+    Costs 1 call — saves 11 calls when the entire year is empty.
     """
-    try:
-        r = requests.get(
-            USER_INFO_EP,
-            headers=headers,
-            params={"userName": handle},
-            timeout=REQUEST_TIMEOUT,
-        )
-        if r.status_code == 429:
-            # Rate limited — just be conservative and start from START_YEAR
-            print("  [429 on user info, defaulting to full range]")
-            time.sleep(RETRY_BACKOFF)
-            return START_YEAR, 1
-        r.raise_for_status()
-        data = r.json()
-        created_raw = (data.get("data") or data).get("createdAt", "")
-        if created_raw:
-            dt = datetime.datetime.strptime(created_raw, "%a %b %d %H:%M:%S +0000 %Y")
-            return dt.year, dt.month
-    except Exception:
-        pass
-    return START_YEAR, 1
+    since = f"{year}-01-01"
+    until = f"{year + 1}-01-01"
+    query = f"from:{handle} since:{since} until:{until} -filter:nativeretweets"
+    data  = search_tweets(headers, query)
+    return bool(data.get("tweets"))
 
 
 # ─────────────────────────────────────────────
@@ -360,14 +344,15 @@ def collect_month(
     since, until = month_window(year, month)
 
     # Build query:
-    #   from:handle          — only this account's tweets
-    #   since:YYYY-MM-DD     — on or after
-    #   until:YYYY-MM-DD     — before (exclusive)
-    #   -filter:nativeretweets — no native RTs
-    quote_filter = "" if INCLUDE_QUOTES else " -filter:quote"
+    #   from:handle              — only this account's tweets
+    #   since:YYYY-MM-DD         — on or after
+    #   until:YYYY-MM-DD         — before (exclusive)
+    #   -filter:nativeretweets   — no native RTs
+    # NOTE: quote-tweet filtering is done in parse_tweet() via the
+    #       quoted_tweet field — -filter:quote is not a valid operator.
     query = (
         f"from:{handle} since:{since} until:{until}"
-        f" -filter:nativeretweets{quote_filter}"
+        f" -filter:nativeretweets"
     )
 
     new_rows  = []
@@ -440,43 +425,53 @@ def main():
         print(f"Account {acct_idx+1}/{len(account_list)}: @{handle}  ({account})")
         print(f"{'='*70}")
 
-        # Fetch account creation date — skip months before it existed
-        created_year, created_month = get_account_start(headers, handle)
-        if (created_year, created_month) > (START_YEAR, 1):
-            print(f"  [info] @{handle} created {created_year}-{created_month:02d}, "
-                  f"skipping earlier months")
-        time.sleep(API_DELAY_SEC)
+        # Group months by year so we can probe each year before drilling in
+        years_in_range = list(range(START_YEAR, END_YEAR + 1))
 
-        for year, month in all_months:
+        for year in years_in_range:
 
-            # Skip months before account existed
-            if (year, month) < (created_year, created_month):
-                batch_num += 1
+            # Skip years already fully completed within the resume account
+            if acct_idx == resume_account_idx and year < last_year:
+                batch_num += 12
                 continue
 
-            batch_num += 1
-
-            # Skip months already completed within the resume account
-            if acct_idx == resume_account_idx and (year, month) <= (last_year, last_month):
-                continue
-
-            pct = batch_num / total_batches * 100
-            print(
-                f"  [{pct:5.1f}%]  {year}-{month:02d}  ...",
-                end="  ", flush=True,
-            )
-
-            new_rows = collect_month(headers, handle, account, year, month, seen_ids)
-
-            append_rows(new_rows)
-            save_progress(handle, year, month)
-
-            print(
-                f"+{len(new_rows):3d} tweets  "
-                f"(total saved: {len(seen_ids):,})"
-            )
-
+            # Probe the whole year with one call — skip if empty
+            print(f"  [probe] {year} ...", end="  ", flush=True)
+            has_any = year_has_tweets(headers, handle, year)
             time.sleep(API_DELAY_SEC)
+
+            if not has_any:
+                print("empty, skipping")
+                batch_num += 12
+                continue
+
+            print("has tweets, collecting monthly")
+
+            for month in range(1, 13):
+
+                batch_num += 1
+
+                # Skip months already completed within the resume account+year
+                if acct_idx == resume_account_idx and (year, month) <= (last_year, last_month):
+                    continue
+
+                pct = batch_num / total_batches * 100
+                print(
+                    f"  [{pct:5.1f}%]  {year}-{month:02d}  ...",
+                    end="  ", flush=True,
+                )
+
+                new_rows = collect_month(headers, handle, account, year, month, seen_ids)
+
+                append_rows(new_rows)
+                save_progress(handle, year, month)
+
+                print(
+                    f"+{len(new_rows):3d} tweets  "
+                    f"(total saved: {len(seen_ids):,})"
+                )
+
+                time.sleep(API_DELAY_SEC)
 
     print(f"\n{'='*70}")
     print(f"DONE.  {len(seen_ids):,} total tweets saved to {OUTPUT_CSV}")
