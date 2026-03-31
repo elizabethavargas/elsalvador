@@ -189,7 +189,8 @@ def main():
     parser.add_argument("--output",  default=DEFAULT_OUTPUT, help="Output CSV path")
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help="Concurrent threads")
     parser.add_argument("--batch",   type=int, default=DEFAULT_BATCH,   help="Flush to disk every N articles")
-    parser.add_argument("--limit",   type=int, default=0, help="Only process first N URLs (0 = all)")
+    parser.add_argument("--limit",   type=int, default=0,  help="Only process first N URLs (0 = all)")
+    parser.add_argument("--url-col", default=None,         help="Name of the URL column if auto-detect fails")
     args = parser.parse_args()
 
     # ── Load input ──
@@ -197,8 +198,35 @@ def main():
         print(f"ERROR: input file not found: {args.input}")
         return
     with open(args.input, newline="", encoding="utf-8") as f:
-        all_rows = list(csv.DictReader(f))
+        reader = csv.DictReader(f)
+        all_rows = list(reader)
+        raw_fieldnames = reader.fieldnames or []
     print(f"[load] {len(all_rows):,} rows in {args.input}")
+
+    # ── Auto-detect URL column name (handles BQ exports, different casings) ──
+    _URL_CANDIDATES = ["url", "URL", "link", "Link", "article_url",
+                       "article_link", "uri", "URI", "source_url"]
+    url_col = args.url_col  # honour explicit override
+    for candidate in _URL_CANDIDATES if url_col is None else []:
+        if candidate in raw_fieldnames:
+            url_col = candidate
+            break
+    if url_col is None:
+        # Last resort: any column whose name contains "url" or "link"
+        for col in raw_fieldnames:
+            if "url" in col.lower() or "link" in col.lower():
+                url_col = col
+                break
+    if url_col is None:
+        print(f"ERROR: could not find a URL column in {args.input}")
+        print(f"       Columns found: {raw_fieldnames}")
+        print(f"       Use --url-col to specify the column name.")
+        return
+    if url_col != "url":
+        print(f"[info] URL column detected as '{url_col}' (not 'url') — normalising rows")
+        # Normalise so the rest of the script always reads row["url"]
+        for row in all_rows:
+            row["url"] = row.get(url_col, "")
 
     # ── Resume: skip already-done URLs ──
     init_output(args.output)
