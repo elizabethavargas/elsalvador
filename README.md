@@ -123,12 +123,13 @@ pip install -r requirements.txt
 ## File Structure
 
 ```
+├── scrape_government.py   # Step 1: scrape government sites (Presidencia, Asamblea, etc.)
 ├── GDELT.py               # Step 2a: collect article URLs from GDELT API
-├── scrape_articles.py     # Step 2b: fetch full text from URL list
-├── scrape_government.py   # Step 1:  scrape government sites
-├── cleaning.py            # HTML extraction and text normalization
-├── config.py              # Political keywords, event timeline, source list
-├── utils.py               # HTTP utilities, date parsing, URL filtering
+├── scrape_articles.py     # Step 2b: fetch full text from any URL CSV
+│
+├── cleaning.py            # Shared HTML extraction and text normalization
+├── config.py              # Political keywords, event timeline, source lists
+├── utils.py               # HTTP, date parsing, URL pre-filtering
 ├── requirements.txt
 │
 ├── gdelt_urls.csv         # URLs collected by GDELT.py
@@ -136,7 +137,6 @@ pip install -r requirements.txt
 ├── articles_text.csv      # Full text output from scrape_articles.py
 │
 └── output/
-    ├── el_salvador_political_dataset.csv   # Government site articles
-    ├── el_salvador_political_dataset.jsonl
-    └── analysis/          # Corpus stats, term trends, topic models
+    ├── government_articles.csv             # Output of scrape_government.py
+    └── analysis/                           # Corpus stats, term trends
 ```
