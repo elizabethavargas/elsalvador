@@ -127,18 +127,23 @@ def _load_env_file(path: str):
 
 
 def get_headers() -> dict:
-    # Try loading from a .env file in the same directory as this script
+    # 1) Try .env file next to this script
     _load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-    api_key = os.environ.get("TWITTERAPI_IO_KEY", "")
+    api_key = os.environ.get("TWITTERAPI_IO_KEY", "").strip()
+
+    # 2) Fall back to interactive prompt
     if not api_key:
-        raise EnvironmentError(
-            "API key not found. Do one of:\n"
-            "  1) Create a .env file next to this script:  TWITTERAPI_IO_KEY=your_key_here\n"
-            "  2) Export it in your shell:  export TWITTERAPI_IO_KEY='your_key_here'\n"
-            "Get a key at: https://twitterapi.io"
-        )
-    return {"X-API-Key": api_key}
+        print("\nNo API key found in environment or .env file.")
+        print("Get your key at: https://twitterapi.io/dashboard")
+        api_key = input("Paste your twitterapi.io API key: ").strip()
+        if not api_key:
+            raise EnvironmentError("No API key provided — cannot continue.")
+        os.environ["TWITTERAPI_IO_KEY"] = api_key
+
+    masked = api_key[:6] + "..." + api_key[-4:] if len(api_key) > 10 else "****"
+    print(f"[auth] Using API key: {masked}")
+    return {"x-api-key": api_key}
 
 
 # ─────────────────────────────────────────────
