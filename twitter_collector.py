@@ -46,8 +46,12 @@ START_YEAR  = 2015
 END_YEAR    = 2025
 
 INCLUDE_QUOTES = False   # Set True to also keep quote-tweets
-API_DELAY_SEC  = 0.5     # pause between requests (API allows 200 QPS; be polite)
+API_DELAY_SEC  = 5.5     # free tier: 1 request per 5 seconds (paid: drop to 0.5)
 REQUEST_TIMEOUT = 30
+
+# 429 retry settings
+MAX_RETRIES    = 5
+RETRY_BACKOFF  = 10      # extra seconds added per retry (10s, 20s, 30s …)
 
 OUTPUT_CSV    = "tweets.csv"
 PROGRESS_FILE = "twitter_progress.json"
@@ -170,8 +174,8 @@ def save_progress(handle: str, year: int, month: int):
 # ─────────────────────────────────────────────
 def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
     """
-    Single call to advanced_search.
-    Returns the parsed JSON dict, or {} on error.
+    Single call to advanced_search with 429-aware retry.
+    Returns the parsed JSON dict, or {} on unrecoverable error.
     """
     params = {
         "query":     query,
@@ -180,21 +184,31 @@ def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
     if cursor:
         params["cursor"] = cursor
 
-    try:
-        r = requests.get(
-            SEARCH_EP,
-            headers=headers,
-            params=params,
-            timeout=REQUEST_TIMEOUT,
-        )
-        r.raise_for_status()
-        return r.json()
-    except requests.HTTPError as exc:
-        print(f"\n  [HTTP {exc.response.status_code}] {exc}")
-        return {}
-    except Exception as exc:
-        print(f"\n  [API error] {exc}")
-        return {}
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            r = requests.get(
+                SEARCH_EP,
+                headers=headers,
+                params=params,
+                timeout=REQUEST_TIMEOUT,
+            )
+            if r.status_code == 429:
+                wait = RETRY_BACKOFF * attempt
+                print(f"\n  [429] Rate limited. Waiting {wait}s (attempt {attempt}/{MAX_RETRIES})...",
+                      end=" ", flush=True)
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            return r.json()
+        except requests.HTTPError as exc:
+            print(f"\n  [HTTP {exc.response.status_code}] {exc}")
+            return {}
+        except Exception as exc:
+            print(f"\n  [API error] {exc}")
+            return {}
+
+    print(f"\n  [skip] Gave up after {MAX_RETRIES} retries.")
+    return {}
 
 
 # ─────────────────────────────────────────────
