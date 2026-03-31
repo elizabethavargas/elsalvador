@@ -46,14 +46,19 @@ START_YEAR  = 2015
 END_YEAR    = 2025
 
 INCLUDE_QUOTES = False   # Set True to also keep quote-tweets
-API_DELAY_SEC  = 0.5     # pause between requests (API allows 200 QPS; be polite)
+API_DELAY_SEC  = 5.5     # free tier: 1 request per 5 seconds (paid: drop to 0.5)
 REQUEST_TIMEOUT = 30
+
+# 429 retry settings
+MAX_RETRIES    = 5
+RETRY_BACKOFF  = 10      # extra seconds added per retry (10s, 20s, 30s …)
 
 OUTPUT_CSV    = "tweets.csv"
 PROGRESS_FILE = "twitter_progress.json"
 
 BASE_URL      = "https://api.twitterapi.io"
 SEARCH_EP     = f"{BASE_URL}/twitter/tweet/advanced_search"
+USER_INFO_EP  = f"{BASE_URL}/twitter/user/info"
 
 CSV_FIELDS = [
     "tweet_id", "handle", "account", "date", "year", "month",
@@ -104,13 +109,34 @@ ACCOUNTS = {
 # ─────────────────────────────────────────────
 # AUTH HEADER
 # ─────────────────────────────────────────────
+def _load_env_file(path: str):
+    """Parse a simple KEY=value .env file and populate os.environ."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+    except FileNotFoundError:
+        pass
+
+
 def get_headers() -> dict:
+    # Try loading from a .env file in the same directory as this script
+    _load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
     api_key = os.environ.get("TWITTERAPI_IO_KEY", "")
     if not api_key:
         raise EnvironmentError(
-            "TWITTERAPI_IO_KEY environment variable is not set.\n"
-            "Get your key at https://twitterapi.io\n"
-            "Then run:  export TWITTERAPI_IO_KEY='your_key_here'"
+            "API key not found. Do one of:\n"
+            "  1) Create a .env file next to this script:  TWITTERAPI_IO_KEY=your_key_here\n"
+            "  2) Export it in your shell:  export TWITTERAPI_IO_KEY='your_key_here'\n"
+            "Get a key at: https://twitterapi.io"
         )
     return {"X-API-Key": api_key}
 
@@ -170,8 +196,8 @@ def save_progress(handle: str, year: int, month: int):
 # ─────────────────────────────────────────────
 def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
     """
-    Single call to advanced_search.
-    Returns the parsed JSON dict, or {} on error.
+    Single call to advanced_search with 429-aware retry.
+    Returns the parsed JSON dict, or {} on unrecoverable error.
     """
     params = {
         "query":     query,
@@ -180,21 +206,63 @@ def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
     if cursor:
         params["cursor"] = cursor
 
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            r = requests.get(
+                SEARCH_EP,
+                headers=headers,
+                params=params,
+                timeout=REQUEST_TIMEOUT,
+            )
+            if r.status_code == 429:
+                wait = RETRY_BACKOFF * attempt
+                print(f"\n  [429] Rate limited. Waiting {wait}s (attempt {attempt}/{MAX_RETRIES})...",
+                      end=" ", flush=True)
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            return r.json()
+        except requests.HTTPError as exc:
+            print(f"\n  [HTTP {exc.response.status_code}] {exc}")
+            return {}
+        except Exception as exc:
+            print(f"\n  [API error] {exc}")
+            return {}
+
+    print(f"\n  [skip] Gave up after {MAX_RETRIES} retries.")
+    return {}
+
+
+# ─────────────────────────────────────────────
+# ACCOUNT CREATION DATE
+# ─────────────────────────────────────────────
+def get_account_start(headers: dict, handle: str) -> tuple[int, int]:
+    """
+    Return (year, month) the Twitter account was created.
+    Falls back to (START_YEAR, 1) on any error so we still collect everything.
+    Costs 1 API call per account (~$0.00018).
+    """
     try:
         r = requests.get(
-            SEARCH_EP,
+            USER_INFO_EP,
             headers=headers,
-            params=params,
+            params={"userName": handle},
             timeout=REQUEST_TIMEOUT,
         )
+        if r.status_code == 429:
+            # Rate limited — just be conservative and start from START_YEAR
+            print("  [429 on user info, defaulting to full range]")
+            time.sleep(RETRY_BACKOFF)
+            return START_YEAR, 1
         r.raise_for_status()
-        return r.json()
-    except requests.HTTPError as exc:
-        print(f"\n  [HTTP {exc.response.status_code}] {exc}")
-        return {}
-    except Exception as exc:
-        print(f"\n  [API error] {exc}")
-        return {}
+        data = r.json()
+        created_raw = (data.get("data") or data).get("createdAt", "")
+        if created_raw:
+            dt = datetime.datetime.strptime(created_raw, "%a %b %d %H:%M:%S +0000 %Y")
+            return dt.year, dt.month
+    except Exception:
+        pass
+    return START_YEAR, 1
 
 
 # ─────────────────────────────────────────────
@@ -372,7 +440,19 @@ def main():
         print(f"Account {acct_idx+1}/{len(account_list)}: @{handle}  ({account})")
         print(f"{'='*70}")
 
+        # Fetch account creation date — skip months before it existed
+        created_year, created_month = get_account_start(headers, handle)
+        if (created_year, created_month) > (START_YEAR, 1):
+            print(f"  [info] @{handle} created {created_year}-{created_month:02d}, "
+                  f"skipping earlier months")
+        time.sleep(API_DELAY_SEC)
+
         for year, month in all_months:
+
+            # Skip months before account existed
+            if (year, month) < (created_year, created_month):
+                batch_num += 1
+                continue
 
             batch_num += 1
 
