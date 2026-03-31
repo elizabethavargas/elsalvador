@@ -220,10 +220,13 @@ def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
                       end=" ", flush=True)
                 time.sleep(wait)
                 continue
+            # Always print full response for debugging
+            print(f"\n  [debug] status={r.status_code} url={r.url}")
+            print(f"  [debug] response={r.text[:500]}")
             r.raise_for_status()
             return r.json()
         except requests.HTTPError as exc:
-            print(f"\n  [HTTP {exc.response.status_code}] {exc}")
+            print(f"\n  [HTTP {exc.response.status_code}] body: {exc.response.text[:300]}")
             return {}
         except Exception as exc:
             print(f"\n  [API error] {exc}")
@@ -242,8 +245,8 @@ def year_has_tweets(headers: dict, handle: str, year: int) -> bool:
     Returns True if at least one tweet exists, False if the year is empty.
     Costs 1 call — saves 11 calls when the entire year is empty.
     """
-    since = f"{year}-01-01"
-    until = f"{year + 1}-01-01"
+    since = f"{year}-01-01_00:00:00_UTC"
+    until = f"{year + 1}-01-01_00:00:00_UTC"
     query = f"from:{handle} since:{since} until:{until} -filter:nativeretweets"
     data  = search_tweets(headers, query)
     return bool(data.get("tweets"))
@@ -252,7 +255,7 @@ def year_has_tweets(headers: dict, handle: str, year: int) -> bool:
 # ─────────────────────────────────────────────
 # TWEET PARSING
 # ─────────────────────────────────────────────
-def parse_tweet(raw: dict, handle: str, account: str, seen_ids: set) -> dict | None:
+def parse_tweet(raw: dict, handle: str, account: str, seen_ids: set) -> dict: # | None:
     """
     Convert a raw tweet dict from the API into a CSV row dict.
     Returns None if the tweet should be skipped (duplicate, retweet, quote).
@@ -312,16 +315,19 @@ def iter_months(start_year: int, end_year: int):
             yield year, month
 
 
-def month_window(year: int, month: int) -> tuple[str, str]:
+def month_window(year: int, month: int) -> tuple: #[str, str]:
     """
-    Return (since_str, until_str) in YYYY-MM-DD format.
-    until is the first day of the next month (exclusive in Twitter search).
+    Return (since_str, until_str) in YYYY-MM-DD_HH:MM:SS_UTC format
+    (required by twitterapi.io advanced search).
+    until is the first day of the next month (exclusive).
     """
-    since = datetime.date(year, month, 1).strftime("%Y-%m-%d")
+    since_d = datetime.date(year, month, 1)
     if month == 12:
-        until = datetime.date(year + 1, 1, 1).strftime("%Y-%m-%d")
+        until_d = datetime.date(year + 1, 1, 1)
     else:
-        until = datetime.date(year, month + 1, 1).strftime("%Y-%m-%d")
+        until_d = datetime.date(year, month + 1, 1)
+    since = since_d.strftime("%Y-%m-%d_00:00:00_UTC")
+    until = until_d.strftime("%Y-%m-%d_00:00:00_UTC")
     return since, until
 
 
