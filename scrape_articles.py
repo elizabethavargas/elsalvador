@@ -28,7 +28,8 @@ import re
 import time
 
 import requests
-from bs4 import BeautifulSoup
+
+import cleaning
 
 # ─────────────────────────────────────────────
 # DEFAULTS
@@ -36,9 +37,8 @@ from bs4 import BeautifulSoup
 DEFAULT_INPUT   = "gdelt_urls.csv"
 DEFAULT_OUTPUT  = "articles_text.csv"
 DEFAULT_WORKERS = 8          # concurrent threads
-DEFAULT_BATCH   = 100        # rows flushed to disk at a time
+DEFAULT_BATCH   = 25         # flush to disk every N articles (keep low for safety)
 REQUEST_TIMEOUT = 15
-REQUEST_DELAY   = 0.0        # per-thread delay (threads already spread load)
 
 OUTPUT_FIELDS = ["url", "year", "month", "title", "domain",
                  "text", "word_count", "scraped_date"]
@@ -81,76 +81,6 @@ _SKIP_SECTION_RE = re.compile(
 
 def is_political_url(url: str) -> bool:
     return not _SKIP_SECTION_RE.search(url)
-
-
-# ─────────────────────────────────────────────
-# HTML TEXT EXTRACTION
-# ─────────────────────────────────────────────
-# CSS selectors tried in order for the article body
-_ARTICLE_SELECTORS = [
-    "article",
-    ".entry-content", ".post-content", ".article-body", ".story-body",
-    ".nota-contenido", ".article-content", ".content-body",
-    ".the-content", "main",
-]
-
-# Boilerplate phrases stripped from extracted text
-_BOILERPLATE = [
-    "Todos los derechos reservados", "Política de privacidad",
-    "Síguenos en redes sociales", "Lee también:", "Te puede interesar:",
-    "Contenido relacionado", "Comparte esta noticia", "Publicidad",
-    "Suscríbete", "Copyright ©",
-]
-
-
-def extract_text(html: str):
-    """
-    Extract (title, body_text) from raw HTML.
-    Returns ("", "") on failure.
-    """
-    try:
-        soup = BeautifulSoup(html, "lxml")
-
-        # Remove noise elements
-        for tag in soup(["script", "style", "nav", "footer", "header",
-                          "aside", "form", "noscript", "iframe"]):
-            tag.decompose()
-
-        # Title
-        title = ""
-        h1 = soup.find("h1")
-        if h1:
-            title = h1.get_text(" ", strip=True)
-        if not title:
-            og = soup.find("meta", property="og:title")
-            if og:
-                title = og.get("content", "").strip()
-        if not title:
-            t = soup.find("title")
-            if t:
-                title = t.get_text(strip=True)
-
-        # Article body — try selectors then fall back to all <p>
-        body = None
-        for sel in _ARTICLE_SELECTORS:
-            body = soup.select_one(sel)
-            if body:
-                break
-
-        paragraphs = (body or soup).find_all("p")
-        parts = [p.get_text(" ", strip=True) for p in paragraphs if p.get_text(strip=True)]
-        text = "\n\n".join(parts)
-
-        # Strip boilerplate phrases
-        for phrase in _BOILERPLATE:
-            text = text.replace(phrase, "")
-
-        # Collapse whitespace
-        text = re.sub(r"\n{3,}", "\n\n", text).strip()
-
-        return title, text
-    except Exception:
-        return "", ""
 
 
 # ─────────────────────────────────────────────
@@ -205,12 +135,10 @@ def scrape_row(row: dict):
     if not html or len(html) < 500:
         return None
 
-    scraped_title, text = extract_text(html)
+    title = cleaning.extract_title_from_html(html) or row.get("title", "")
+    text  = cleaning.extract_article_content(html)
     if len(text.strip()) < 150:
         return None   # not enough content
-
-    # Use GDELT title if scraping didn't produce one
-    title = scraped_title or row.get("title", "")
 
     return {
         "url":          url,
