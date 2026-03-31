@@ -58,6 +58,7 @@ PROGRESS_FILE = "twitter_progress.json"
 
 BASE_URL      = "https://api.twitterapi.io"
 SEARCH_EP     = f"{BASE_URL}/twitter/tweet/advanced_search"
+USER_INFO_EP  = f"{BASE_URL}/twitter/user/info"
 
 CSV_FIELDS = [
     "tweet_id", "handle", "account", "date", "year", "month",
@@ -230,6 +231,38 @@ def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
 
     print(f"\n  [skip] Gave up after {MAX_RETRIES} retries.")
     return {}
+
+
+# ─────────────────────────────────────────────
+# ACCOUNT CREATION DATE
+# ─────────────────────────────────────────────
+def get_account_start(headers: dict, handle: str) -> tuple[int, int]:
+    """
+    Return (year, month) the Twitter account was created.
+    Falls back to (START_YEAR, 1) on any error so we still collect everything.
+    Costs 1 API call per account (~$0.00018).
+    """
+    try:
+        r = requests.get(
+            USER_INFO_EP,
+            headers=headers,
+            params={"userName": handle},
+            timeout=REQUEST_TIMEOUT,
+        )
+        if r.status_code == 429:
+            # Rate limited — just be conservative and start from START_YEAR
+            print("  [429 on user info, defaulting to full range]")
+            time.sleep(RETRY_BACKOFF)
+            return START_YEAR, 1
+        r.raise_for_status()
+        data = r.json()
+        created_raw = (data.get("data") or data).get("createdAt", "")
+        if created_raw:
+            dt = datetime.datetime.strptime(created_raw, "%a %b %d %H:%M:%S +0000 %Y")
+            return dt.year, dt.month
+    except Exception:
+        pass
+    return START_YEAR, 1
 
 
 # ─────────────────────────────────────────────
@@ -407,7 +440,19 @@ def main():
         print(f"Account {acct_idx+1}/{len(account_list)}: @{handle}  ({account})")
         print(f"{'='*70}")
 
+        # Fetch account creation date — skip months before it existed
+        created_year, created_month = get_account_start(headers, handle)
+        if (created_year, created_month) > (START_YEAR, 1):
+            print(f"  [info] @{handle} created {created_year}-{created_month:02d}, "
+                  f"skipping earlier months")
+        time.sleep(API_DELAY_SEC)
+
         for year, month in all_months:
+
+            # Skip months before account existed
+            if (year, month) < (created_year, created_month):
+                batch_num += 1
+                continue
 
             batch_num += 1
 
