@@ -11,10 +11,9 @@ AUTHENTICATION (one of):
   Get a key at: https://twitterapi.io/dashboard
 
 HOW IT WORKS:
-  Uses the /twitter/user/last_tweets endpoint (confirmed working).
-  Paginates backwards (newest → oldest) using the cursor field.
-  Stops as soon as tweets fall before START_YEAR.
-  Filters retweets and (optionally) quote-tweets client-side.
+  Uses /twitter/tweet/advanced_search with daily since_time/until_time windows
+  (Unix timestamps). Cursor pagination is broken platform-wide as of March 2026,
+  so we avoid it entirely — one request per day, no pagination.
 
 RESTART SAFETY:
   - Appends to tweets.csv after every page of results.
@@ -41,10 +40,16 @@ import requests
 START_YEAR  = 2015
 END_YEAR    = 2025
 
+# Per-account override: earliest year to collect (inclusive).
+# Accounts not listed here use START_YEAR.
+ACCOUNT_START_YEARS = {
+    "nayibbukele": 2019,   # politically prominent from ~2019 election
+}
+
 INCLUDE_QUOTES = False  # True → keep quote-tweets too
 INCLUDE_REPLIES = False # True → keep replies
 
-API_DELAY_SEC  = 5.5   # free tier: 1 req / 5 s  (drop to 0.5 on paid)
+API_DELAY_SEC  = 0.5   # paid tier
 MAX_RETRIES    = 5
 RETRY_BACKOFF  = 15    # seconds to wait on 429, multiplied by attempt number
 
@@ -52,8 +57,8 @@ REQUEST_TIMEOUT = 30
 OUTPUT_CSV      = "tweets.csv"
 PROGRESS_FILE   = "twitter_progress.json"
 
-BASE_URL       = "https://api.twitterapi.io"
-LAST_TWEETS_EP = f"{BASE_URL}/twitter/user/last_tweets"
+BASE_URL   = "https://api.twitterapi.io"
+SEARCH_EP  = f"{BASE_URL}/twitter/tweet/advanced_search"
 
 CSV_FIELDS = [
     "tweet_id", "handle", "account", "date", "year", "month",
@@ -65,36 +70,15 @@ CSV_FIELDS = [
 # ─────────────────────────────────────────────
 ACCOUNTS = {
     # ── Executive ──────────────────────────────────────────────────────────
-    "presidencia_sv":   "Presidencia SV",
-    "nayibbukele":      "Nayib Bukele",
-    "GobiernodeSV":     "Gobierno de El Salvador",
+    "PresidenciaSV":    "Casa Presidencial",
+    "Gobierno_SV":      "Gobierno de El Salvador",
+    "nayibbukele":      "Nayib Bukele",          # 2019+ per ACCOUNT_START_YEARS
 
     # ── Legislature ────────────────────────────────────────────────────────
-    "AsambleaSV":       "Asamblea Legislativa SV",
+    "AsambleaSV":       "Asamblea Legislativa",
 
-    # ── Ministries ─────────────────────────────────────────────────────────
-    "MJSP_SV":          "Min. Justicia y Seguridad",
-    "MHFiscal_SV":      "Min. de Hacienda",
-    "MINSALsv":         "Min. de Salud",
-    "MEDUCsv":          "Min. de Educación",
-    "MOP_SV":           "Min. Obras Públicas",
-    "MREEElSalvador":   "Min. Relaciones Exteriores",
-    "MTPS_SV":          "Min. de Trabajo",
-    "MAG_SV":           "Min. de Agricultura",
-
-    # ── Security / Military ────────────────────────────────────────────────
-    "PNCElSalvador":    "Policía Nacional Civil",
-    "FAES_SV":          "Fuerzas Armadas SV",
-
-    # ── Justice / Oversight ───────────────────────────────────────────────
-    "FGR_SV":           "Fiscalía General",
-    "CSJ_SV":           "Corte Suprema de Justicia",
-    "TSEElSalvador":    "Tribunal Supremo Electoral",
-    "PDDH_SV":          "Procuraduría DDHH",
-
-    # ── Economic / Other ──────────────────────────────────────────────────
-    "BCR_SV":           "Banco Central de Reserva",
-    "CEPA_sv":          "CEPA",
+    # ── Justice / Prosecution ─────────────────────────────────────────────
+    "FGR_SV":           "Fiscalía General de la República",
 }
 
 
@@ -168,8 +152,21 @@ def append_rows(rows):
 def load_progress():
     if os.path.exists(PROGRESS_FILE):
         with open(PROGRESS_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    return {"done": []}
+            data = json.load(f)
+        if "completed_months" not in data:
+            data["completed_months"] = {}
+        return data
+    return {"done": [], "completed_months": {}}
+
+
+def mark_month_done(progress, handle, year, month):
+    """Record that a specific year-month has been fully fetched and saved."""
+    key = f"{year}-{month:02d}"
+    progress["completed_months"].setdefault(handle, [])
+    if key not in progress["completed_months"][handle]:
+        progress["completed_months"][handle].append(key)
+    with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
+        json.dump(progress, f, indent=2)
 
 
 def mark_done(progress, handle):
@@ -182,45 +179,45 @@ def mark_done(progress, handle):
 # ─────────────────────────────────────────────
 # API — fetch one page of a user's tweets
 # ─────────────────────────────────────────────
-def fetch_page(headers, handle, cursor=""):
-    """
-    GET /twitter/user/last_tweets
-    Returns parsed JSON dict, or {} on unrecoverable error.
-    """
-    params = {
-        "userName":      handle,
-        "includeReplies": "true" if INCLUDE_REPLIES else "false",
-    }
-    if cursor:
-        params["cursor"] = cursor
-
+def _get(headers, url, params):
+    """Raw GET with 429 retry. Returns response object or None."""
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            r = requests.get(
-                LAST_TWEETS_EP,
-                headers=headers,
-                params=params,
-                timeout=REQUEST_TIMEOUT,
-            )
+            r = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
             if r.status_code == 429:
                 wait = RETRY_BACKOFF * attempt
-                print(f"\n    [429] rate limited — waiting {wait}s ...", flush=True)
+                print(f"\n    [429] rate limited — waiting {wait}s (attempt {attempt}) ...", flush=True)
                 time.sleep(wait)
                 continue
             if not r.ok:
-                print(f"\n    [HTTP {r.status_code}] {r.text[:200]}")
-                return {}
-            return r.json()
+                print(f"\n    [HTTP {r.status_code}] {r.text[:300]}")
+                return None
+            return r
         except Exception as exc:
             print(f"\n    [error] {exc}")
-            return {}
-
+            return None
     print(f"    [skip] gave up after {MAX_RETRIES} retries")
-    return {}
+    return None
+
+
+def fetch_window(headers, handle, since_ts, until_ts):
+    """
+    Fetch one day's worth of tweets via advanced_search using Unix timestamps.
+    No pagination — cursor-based pagination is broken platform-wide (March 2026).
+    Returns list of raw tweet dicts.
+    """
+    query = f"from:{handle} since_time:{since_ts} until_time:{until_ts} -filter:retweets -filter:quote"
+    params = {"query": query, "queryType": "Latest"}
+
+    r = _get(headers, SEARCH_EP, params)
+    if not r:
+        return []
+    data = r.json()
+    return data.get("tweets") or []
 
 
 # ─────────────────────────────────────────────
-# TWEET PARSING
+# TWEET PARSING-
 # ─────────────────────────────────────────────
 def parse_dt(raw):
     """Parse 'Mon Jan 01 00:00:00 +0000 2024' → datetime, or None."""
@@ -235,15 +232,13 @@ def parse_tweet(raw, handle, account, seen_ids):
     if not tid or tid in seen_ids:
         return None
 
-    # Skip retweets
-    if raw.get("retweeted_tweet"):
-        return None
-
-    # Skip quote-tweets if not wanted
-    if not INCLUDE_QUOTES and raw.get("quoted_tweet"):
-        return None
-
     seen_ids.add(tid)
+
+    text = (raw.get("text") or "").replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
+    # Client-side backstop in case API filter leaks anything through
+    if text.startswith("RT @") or raw.get("retweeted_status") or raw.get("retweetedTweet"):
+        return None
 
     dt = parse_dt(raw.get("createdAt", ""))
     if dt:
@@ -253,8 +248,6 @@ def parse_tweet(raw, handle, account, seen_ids):
     else:
         date_str = raw.get("createdAt", "")
         year_str = month_str = ""
-
-    text = (raw.get("text") or "").replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
 
     return {
         "tweet_id":  tid,
@@ -276,72 +269,109 @@ def parse_tweet(raw, handle, account, seen_ids):
 # ─────────────────────────────────────────────
 # COLLECT ONE ACCOUNT
 # ─────────────────────────────────────────────
-def collect_account(headers, handle, account, seen_ids):
+def iter_days(month_start, month_end):
+    """Yield (day_start, day_end) pairs covering a calendar month."""
+    cur = month_start
+    while cur < month_end:
+        nxt = cur + datetime.timedelta(days=1)
+        yield cur, nxt
+        cur = nxt
+
+
+def collect_account(headers, handle, account, seen_ids, progress):
     """
-    Paginate backwards through all of `handle`'s tweets.
-    Stops once tweets fall before START_YEAR.
-    Appends to CSV after every page.
-    Returns total new tweets saved.
+    Adaptive time-window collection (newest → oldest).
+
+    1. Query one calendar month at a time.
+    2. If the month returns a full page (20 tweets), drill into daily windows
+       for that month — there are likely more tweets than one page can hold.
+    3. If the month returns < 20, we got everything; no daily breakdown needed.
+
+    Cost: quiet accounts ~12 req/year. Active months cost an extra ~30 req.
+    Completed months are checkpointed so interrupted runs resume cleanly.
     """
-    cursor    = ""
-    page      = 0
-    total_new = 0
+    tz         = datetime.timezone.utc
+    MAX_PAGE   = 20          # advanced_search returns at most 20 per call
+    total_new  = 0
+    acct_start = ACCOUNT_START_YEARS.get(handle, START_YEAR)
+    done_months = set(progress["completed_months"].get(handle, []))
 
-    while True:
-        page += 1
-        data = fetch_page(headers, handle, cursor)
+    # Walk months newest → oldest
+    year  = END_YEAR
+    month = 12
+    while (year, month) >= (acct_start, 1):
+        # Build month window
+        mo_start = datetime.datetime(year, month, 1, tzinfo=tz)
+        if month == 12:
+            mo_end = datetime.datetime(year + 1, 1, 1, tzinfo=tz)
+        else:
+            mo_end = datetime.datetime(year, month + 1, 1, tzinfo=tz)
 
-        if not data:
-            print(f"    [!] empty response on page {page}, stopping")
-            break
+        mo_key = mo_start.strftime("%Y-%m")
 
-        # Response format: { "data": { "tweets": [...] }, "has_next_page": ..., "next_cursor": ... }
-        tweets = (data.get("data") or {}).get("tweets") or data.get("tweets") or []
-        if not tweets:
-            print(f"    [!] no tweets on page {page}, stopping")
-            break
+        # Skip months already checkpointed
+        if mo_key in done_months:
+            print(f"    {mo_key}    | (already done, skipping)")
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+            continue
 
-        # Parse and date-filter this page
-        page_rows = []
-        oldest_dt = None
+        since_ts = int(mo_start.timestamp())
+        until_ts = int(mo_end.timestamp())
 
-        for raw in tweets:
-            dt = parse_dt(raw.get("createdAt", ""))
-            if dt:
-                if oldest_dt is None or dt < oldest_dt:
-                    oldest_dt = dt
-
-            # Date range filter
-            if dt:
-                if dt.year > END_YEAR:
-                    continue   # newer than our range — skip but keep paginating
-                if dt.year < START_YEAR:
-                    continue   # older than our range — skip (will stop below)
-
-            row = parse_tweet(raw, handle, account, seen_ids)
-            if row:
-                page_rows.append(row)
-
-        append_rows(page_rows)
-        total_new += len(page_rows)
-
-        oldest_str = oldest_dt.strftime("%Y-%m-%d") if oldest_dt else "?"
-        print(f"    page {page:3d} | +{len(page_rows):3d} tweets | "
-              f"oldest on page: {oldest_str} | total new: {total_new:,}")
-
-        # Stop if we've gone past the start of our date range
-        if oldest_dt and oldest_dt.year < START_YEAR:
-            print(f"    reached {oldest_dt.year} < {START_YEAR}, done with this account")
-            break
-
-        if not data.get("has_next_page"):
-            break
-
-        cursor = data.get("next_cursor", "")
-        if not cursor:
-            break
-
+        mo_tweets = fetch_window(headers, handle, since_ts, until_ts)
         time.sleep(API_DELAY_SEC)
+
+        if not mo_tweets:
+            print(f"    {mo_key}    | (empty)")
+            mark_month_done(progress, handle, year, month)
+            done_months.add(mo_key)
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+            continue
+
+        if len(mo_tweets) < MAX_PAGE:
+            # Got everything for the month in one shot
+            rows = [r for raw in mo_tweets
+                    for r in [parse_tweet(raw, handle, account, seen_ids)] if r]
+            if rows:
+                append_rows(rows)
+                total_new += len(rows)
+            print(f"    {mo_key}    | "
+                  f"+{len(rows):3d} tweets ({len(mo_tweets)} raw, 1 req) | total: {total_new:,}")
+        else:
+            # Full page returned — drill into days to avoid missing tweets
+            mo_new = 0
+            mo_req = 0
+            for d_start, d_end in iter_days(mo_start, mo_end):
+                d_tweets = fetch_window(headers, handle,
+                                        int(d_start.timestamp()),
+                                        int(d_end.timestamp()))
+                mo_req += 1
+                rows = [r for raw in d_tweets
+                        for r in [parse_tweet(raw, handle, account, seen_ids)] if r]
+                if rows:
+                    append_rows(rows)
+                    mo_new    += len(rows)
+                    total_new += len(rows)
+                time.sleep(API_DELAY_SEC)
+
+            print(f"    {mo_key} (daily) | "
+                  f"+{mo_new:3d} tweets ({mo_req} req) | total: {total_new:,}")
+
+        # Checkpoint this month as done
+        mark_month_done(progress, handle, year, month)
+        done_months.add(mo_key)
+
+        # Step back one month
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
 
     return total_new
 
@@ -372,7 +402,7 @@ def main():
         print(f"[{idx:2d}/{len(account_list)}] @{handle}  ({account})")
         print(f"{'='*70}")
 
-        new_count = collect_account(headers, handle, account, seen_ids)
+        new_count = collect_account(headers, handle, account, seen_ids, progress)
 
         mark_done(progress, handle)
         print(f"  ✓ @{handle} complete — {new_count:,} new tweets  "
