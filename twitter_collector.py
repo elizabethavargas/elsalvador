@@ -4,31 +4,26 @@ twitter_collector.py — El Salvador government tweet collection via twitterapi.
 REQUIREMENTS:
   pip install requests
 
-AUTHENTICATION:
-  Set your API key in the environment variable:
-    export TWITTERAPI_IO_KEY="your_api_key_here"
-  Or create a .env file and load it yourself before running.
-  Get a key at: https://twitterapi.io
+AUTHENTICATION (one of):
+  1) Script will prompt you to paste your key on first run
+  2) Create a .env file:  TWITTERAPI_IO_KEY=your_key_here
+  3) Export in shell:     export TWITTERAPI_IO_KEY=your_key_here
+  Get a key at: https://twitterapi.io/dashboard
 
 HOW IT WORKS:
-  Uses the advanced_search endpoint with query operators:
-    from:<handle> since:YYYY-MM-DD until:YYYY-MM-DD -filter:nativeretweets
-  Queries one month at a time per account to stay under page limits.
-  Paginates through all results using the cursor field.
+  Uses /twitter/tweet/advanced_search with daily since_time/until_time windows
+  (Unix timestamps). Cursor pagination is broken platform-wide as of March 2026,
+  so we avoid it entirely — one request per day, no pagination.
 
 RESTART SAFETY:
-  - Tweets are appended to tweets.csv after each (account × month) batch.
-  - twitter_progress.json records the last completed (handle, year, month).
-  - Re-running the script resumes from where it left off automatically.
+  - Appends to tweets.csv after every page of results.
+  - twitter_progress.json tracks which accounts are fully done.
+  - Re-running resumes: skips completed accounts, re-paginates
+    the current one (duplicate tweet IDs are skipped automatically).
 
 OUTPUT: tweets.csv
-  Columns: tweet_id | handle | account | date | year | month | text |
-           likes | retweets | replies | quotes | views | lang
-
-COST ESTIMATE (twitterapi.io pricing):
-  $0.15 per 1,000 tweets fetched.  A typical government account posts
-  ~100-500 tweets/year, so 20 accounts × 10 years ≈ 20,000-100,000 tweets
-  ≈ $3–$15 total.
+  tweet_id | handle | account | date | year | month |
+  text | likes | retweets | replies | quotes | views | lang
 """
 
 import csv
@@ -45,20 +40,25 @@ import requests
 START_YEAR  = 2015
 END_YEAR    = 2025
 
-INCLUDE_QUOTES = False   # Set True to also keep quote-tweets
-API_DELAY_SEC  = 5.5     # free tier: 1 request per 5 seconds (paid: drop to 0.5)
-REQUEST_TIMEOUT = 30
+# Per-account override: earliest year to collect (inclusive).
+# Accounts not listed here use START_YEAR.
+ACCOUNT_START_YEARS = {
+    "nayibbukele": 2019,   # politically prominent from ~2019 election
+}
 
-# 429 retry settings
+INCLUDE_QUOTES = False  # True → keep quote-tweets too
+INCLUDE_REPLIES = False # True → keep replies
+
+API_DELAY_SEC  = 0.5   # paid tier
 MAX_RETRIES    = 5
-RETRY_BACKOFF  = 10      # extra seconds added per retry (10s, 20s, 30s …)
+RETRY_BACKOFF  = 15    # seconds to wait on 429, multiplied by attempt number
 
-OUTPUT_CSV    = "tweets.csv"
-PROGRESS_FILE = "twitter_progress.json"
+REQUEST_TIMEOUT = 30
+OUTPUT_CSV      = "tweets.csv"
+PROGRESS_FILE   = "twitter_progress.json"
 
-BASE_URL      = "https://api.twitterapi.io"
-SEARCH_EP     = f"{BASE_URL}/twitter/tweet/advanced_search"
-USER_INFO_EP  = f"{BASE_URL}/twitter/user/info"
+BASE_URL   = "https://api.twitterapi.io"
+SEARCH_EP  = f"{BASE_URL}/twitter/tweet/advanced_search"
 
 CSV_FIELDS = [
     "tweet_id", "handle", "account", "date", "year", "month",
@@ -67,50 +67,25 @@ CSV_FIELDS = [
 
 # ─────────────────────────────────────────────
 # EL SALVADOR GOVERNMENT ACCOUNTS
-#
-# Format: { "twitter_handle": "display_name" }
-# Handles are used in the query; display name goes into the CSV.
 # ─────────────────────────────────────────────
 ACCOUNTS = {
     # ── Executive ──────────────────────────────────────────────────────────
-    "presidencia_sv":   "Presidencia SV",
-    "nayibbukele":      "Nayib Bukele",
-    "GobiernodeSV":     "Gobierno de El Salvador",
+    "PresidenciaSV":    "Casa Presidencial",
+    "Gobierno_SV":      "Gobierno de El Salvador",
+    "nayibbukele":      "Nayib Bukele",          # 2019+ per ACCOUNT_START_YEARS
 
     # ── Legislature ────────────────────────────────────────────────────────
-    "AsambleaSV":       "Asamblea Legislativa SV",
+    "AsambleaSV":       "Asamblea Legislativa",
 
-    # ── Ministries ─────────────────────────────────────────────────────────
-    "MJSP_SV":          "Min. Justicia y Seguridad",
-    "MHFiscal_SV":      "Min. de Hacienda",
-    "MINSALsv":         "Min. de Salud",
-    "MEDUCsv":          "Min. de Educación",
-    "MOP_SV":           "Min. Obras Públicas",
-    "MREEElSalvador":   "Min. Relaciones Exteriores",
-    "MTPS_SV":          "Min. de Trabajo",
-    "MAG_SV":           "Min. de Agricultura",
-
-    # ── Security / Military ────────────────────────────────────────────────
-    "PNCElSalvador":    "Policía Nacional Civil",
-    "FAES_SV":          "Fuerzas Armadas SV",
-
-    # ── Justice / Oversight ───────────────────────────────────────────────
-    "FGR_SV":           "Fiscalía General",
-    "CSJ_SV":           "Corte Suprema de Justicia",
-    "TSEElSalvador":    "Tribunal Supremo Electoral",
-    "PDDH_SV":          "Procuraduría DDHH",
-
-    # ── Economic / Other ──────────────────────────────────────────────────
-    "BCR_SV":           "Banco Central de Reserva",
-    "CEPA_sv":          "CEPA",
+    # ── Justice / Prosecution ─────────────────────────────────────────────
+    "FGR_SV":           "Fiscalía General de la República",
 }
 
 
 # ─────────────────────────────────────────────
-# AUTH HEADER
+# AUTH
 # ─────────────────────────────────────────────
-def _load_env_file(path: str):
-    """Parse a simple KEY=value .env file and populate os.environ."""
+def _load_env_file(path):
     try:
         with open(path, encoding="utf-8") as f:
             for line in f:
@@ -126,18 +101,19 @@ def _load_env_file(path: str):
         pass
 
 
-def get_headers() -> dict:
-    # Try loading from a .env file in the same directory as this script
+def get_headers():
     _load_env_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
-
-    api_key = os.environ.get("TWITTERAPI_IO_KEY", "")
+    api_key = os.environ.get("TWITTERAPI_IO_KEY", "").strip()
     if not api_key:
-        raise EnvironmentError(
-            "API key not found. Do one of:\n"
-            "  1) Create a .env file next to this script:  TWITTERAPI_IO_KEY=your_key_here\n"
-            "  2) Export it in your shell:  export TWITTERAPI_IO_KEY='your_key_here'\n"
-            "Get a key at: https://twitterapi.io"
-        )
+        print("\nNo API key found in environment or .env file.")
+        print("Get your key at: https://twitterapi.io/dashboard")
+        api_key = input("Paste your twitterapi.io API key: ").strip()
+        if not api_key:
+            raise EnvironmentError("No API key provided.")
+        os.environ["TWITTERAPI_IO_KEY"] = api_key
+    masked = api_key[:6] + "..." + api_key[-4:] if len(api_key) > 10 else "****"
+    print(f"[auth] Key loaded: {masked}")
+    # Use exact capitalisation confirmed working by user
     return {"X-API-Key": api_key}
 
 
@@ -145,15 +121,13 @@ def get_headers() -> dict:
 # CSV HELPERS
 # ─────────────────────────────────────────────
 def init_csv():
-    """Create CSV with header row if it doesn't already exist."""
     if not os.path.exists(OUTPUT_CSV):
         with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
             csv.DictWriter(f, fieldnames=CSV_FIELDS).writeheader()
         print(f"[init] Created {OUTPUT_CSV}")
 
 
-def load_existing_ids() -> set:
-    """Read all tweet IDs already saved so we can skip duplicates on resume."""
+def load_existing_ids():
     if not os.path.exists(OUTPUT_CSV):
         return set()
     seen = set()
@@ -161,12 +135,11 @@ def load_existing_ids() -> set:
         for row in csv.DictReader(f):
             if row.get("tweet_id"):
                 seen.add(row["tweet_id"])
-    print(f"[resume] Loaded {len(seen):,} existing tweet IDs from {OUTPUT_CSV}")
+    print(f"[resume] {len(seen):,} tweet IDs already in {OUTPUT_CSV}")
     return seen
 
 
-def append_rows(rows: list):
-    """Append a list of row dicts to the CSV (no header)."""
+def append_rows(rows):
     if not rows:
         return
     with open(OUTPUT_CSV, "a", newline="", encoding="utf-8") as f:
@@ -174,132 +147,107 @@ def append_rows(rows: list):
 
 
 # ─────────────────────────────────────────────
-# PROGRESS / RESUME
+# PROGRESS
 # ─────────────────────────────────────────────
-def load_progress() -> dict:
+def load_progress():
     if os.path.exists(PROGRESS_FILE):
         with open(PROGRESS_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+            data = json.load(f)
+        if "completed_months" not in data:
+            data["completed_months"] = {}
+        return data
+    return {"done": [], "completed_months": {}}
 
 
-def save_progress(handle: str, year: int, month: int):
+def mark_month_done(progress, handle, year, month):
+    """Record that a specific year-month has been fully fetched and saved."""
+    key = f"{year}-{month:02d}"
+    progress["completed_months"].setdefault(handle, [])
+    if key not in progress["completed_months"][handle]:
+        progress["completed_months"][handle].append(key)
     with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
-        json.dump(
-            {"last_handle": handle, "last_year": year, "last_month": month},
-            f, indent=2,
-        )
+        json.dump(progress, f, indent=2)
+
+
+def mark_done(progress, handle):
+    if handle not in progress["done"]:
+        progress["done"].append(handle)
+    with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
+        json.dump(progress, f, indent=2)
 
 
 # ─────────────────────────────────────────────
-# API CALL
+# API — fetch one page of a user's tweets
 # ─────────────────────────────────────────────
-def search_tweets(headers: dict, query: str, cursor: str = "") -> dict:
-    """
-    Single call to advanced_search with 429-aware retry.
-    Returns the parsed JSON dict, or {} on unrecoverable error.
-    """
-    params = {
-        "query":     query,
-        "queryType": "Latest",
-    }
-    if cursor:
-        params["cursor"] = cursor
-
+def _get(headers, url, params):
+    """Raw GET with 429 retry. Returns response object or None."""
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            r = requests.get(
-                SEARCH_EP,
-                headers=headers,
-                params=params,
-                timeout=REQUEST_TIMEOUT,
-            )
+            r = requests.get(url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
             if r.status_code == 429:
                 wait = RETRY_BACKOFF * attempt
-                print(f"\n  [429] Rate limited. Waiting {wait}s (attempt {attempt}/{MAX_RETRIES})...",
-                      end=" ", flush=True)
+                print(f"\n    [429] rate limited — waiting {wait}s (attempt {attempt}) ...", flush=True)
                 time.sleep(wait)
                 continue
-            r.raise_for_status()
-            return r.json()
-        except requests.HTTPError as exc:
-            print(f"\n  [HTTP {exc.response.status_code}] {exc}")
-            return {}
+            if not r.ok:
+                print(f"\n    [HTTP {r.status_code}] {r.text[:300]}")
+                return None
+            return r
         except Exception as exc:
-            print(f"\n  [API error] {exc}")
-            return {}
+            print(f"\n    [error] {exc}")
+            return None
+    print(f"    [skip] gave up after {MAX_RETRIES} retries")
+    return None
 
-    print(f"\n  [skip] Gave up after {MAX_RETRIES} retries.")
-    return {}
+
+def fetch_window(headers, handle, since_ts, until_ts):
+    """
+    Fetch one day's worth of tweets via advanced_search using Unix timestamps.
+    No pagination — cursor-based pagination is broken platform-wide (March 2026).
+    Returns list of raw tweet dicts.
+    """
+    query = f"from:{handle} since_time:{since_ts} until_time:{until_ts} -filter:retweets -filter:quote"
+    params = {"query": query, "queryType": "Latest"}
+
+    r = _get(headers, SEARCH_EP, params)
+    if not r:
+        return []
+    data = r.json()
+    return data.get("tweets") or []
 
 
 # ─────────────────────────────────────────────
-# ACCOUNT CREATION DATE
+# TWEET PARSING-
 # ─────────────────────────────────────────────
-def get_account_start(headers: dict, handle: str) -> tuple[int, int]:
-    """
-    Return (year, month) the Twitter account was created.
-    Falls back to (START_YEAR, 1) on any error so we still collect everything.
-    Costs 1 API call per account (~$0.00018).
-    """
+def parse_dt(raw):
+    """Parse 'Mon Jan 01 00:00:00 +0000 2024' → datetime, or None."""
     try:
-        r = requests.get(
-            USER_INFO_EP,
-            headers=headers,
-            params={"userName": handle},
-            timeout=REQUEST_TIMEOUT,
-        )
-        if r.status_code == 429:
-            # Rate limited — just be conservative and start from START_YEAR
-            print("  [429 on user info, defaulting to full range]")
-            time.sleep(RETRY_BACKOFF)
-            return START_YEAR, 1
-        r.raise_for_status()
-        data = r.json()
-        created_raw = (data.get("data") or data).get("createdAt", "")
-        if created_raw:
-            dt = datetime.datetime.strptime(created_raw, "%a %b %d %H:%M:%S +0000 %Y")
-            return dt.year, dt.month
-    except Exception:
-        pass
-    return START_YEAR, 1
+        return datetime.datetime.strptime(raw, "%a %b %d %H:%M:%S +0000 %Y")
+    except (ValueError, TypeError):
+        return None
 
 
-# ─────────────────────────────────────────────
-# TWEET PARSING
-# ─────────────────────────────────────────────
-def parse_tweet(raw: dict, handle: str, account: str, seen_ids: set) -> dict | None:
-    """
-    Convert a raw tweet dict from the API into a CSV row dict.
-    Returns None if the tweet should be skipped (duplicate, retweet, quote).
-    """
+def parse_tweet(raw, handle, account, seen_ids):
     tid = str(raw.get("id", ""))
     if not tid or tid in seen_ids:
         return None
 
-    # Skip native retweets (belt-and-suspenders — query already excludes them)
-    if raw.get("retweeted_tweet"):
-        return None
-
-    # Skip quote-tweets if not wanted
-    if not INCLUDE_QUOTES and raw.get("quoted_tweet"):
-        return None
-
     seen_ids.add(tid)
 
-    # createdAt format: "Mon Jan 01 00:00:00 +0000 2024"
-    created_raw = raw.get("createdAt", "")
-    try:
-        created = datetime.datetime.strptime(created_raw, "%a %b %d %H:%M:%S +0000 %Y")
-        date_str  = created.strftime("%Y-%m-%d %H:%M:%S")
-        year_str  = str(created.year)
-        month_str = f"{created.month:02d}"
-    except ValueError:
-        date_str  = created_raw
-        year_str  = ""
-        month_str = ""
-
     text = (raw.get("text") or "").replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
+    # Client-side backstop in case API filter leaks anything through
+    if text.startswith("RT @") or raw.get("retweeted_status") or raw.get("retweetedTweet"):
+        return None
+
+    dt = parse_dt(raw.get("createdAt", ""))
+    if dt:
+        date_str  = dt.strftime("%Y-%m-%d %H:%M:%S")
+        year_str  = str(dt.year)
+        month_str = f"{dt.month:02d}"
+    else:
+        date_str = raw.get("createdAt", "")
+        year_str = month_str = ""
 
     return {
         "tweet_id":  tid,
@@ -319,83 +267,113 @@ def parse_tweet(raw: dict, handle: str, account: str, seen_ids: set) -> dict | N
 
 
 # ─────────────────────────────────────────────
-# MONTH ITERATOR
+# COLLECT ONE ACCOUNT
 # ─────────────────────────────────────────────
-def iter_months(start_year: int, end_year: int):
-    """Yield (year, month) for every month in the range."""
-    for year in range(start_year, end_year + 1):
-        for month in range(1, 13):
-            yield year, month
+def iter_days(month_start, month_end):
+    """Yield (day_start, day_end) pairs covering a calendar month."""
+    cur = month_start
+    while cur < month_end:
+        nxt = cur + datetime.timedelta(days=1)
+        yield cur, nxt
+        cur = nxt
 
 
-def month_window(year: int, month: int) -> tuple[str, str]:
+def collect_account(headers, handle, account, seen_ids, progress):
     """
-    Return (since_str, until_str) in YYYY-MM-DD format.
-    until is the first day of the next month (exclusive in Twitter search).
+    Adaptive time-window collection (newest → oldest).
+
+    1. Query one calendar month at a time.
+    2. If the month returns a full page (20 tweets), drill into daily windows
+       for that month — there are likely more tweets than one page can hold.
+    3. If the month returns < 20, we got everything; no daily breakdown needed.
+
+    Cost: quiet accounts ~12 req/year. Active months cost an extra ~30 req.
+    Completed months are checkpointed so interrupted runs resume cleanly.
     """
-    since = datetime.date(year, month, 1).strftime("%Y-%m-%d")
-    if month == 12:
-        until = datetime.date(year + 1, 1, 1).strftime("%Y-%m-%d")
-    else:
-        until = datetime.date(year, month + 1, 1).strftime("%Y-%m-%d")
-    return since, until
+    tz         = datetime.timezone.utc
+    MAX_PAGE   = 20          # advanced_search returns at most 20 per call
+    total_new  = 0
+    acct_start = ACCOUNT_START_YEARS.get(handle, START_YEAR)
+    done_months = set(progress["completed_months"].get(handle, []))
 
+    # Walk months newest → oldest
+    year  = END_YEAR
+    month = 12
+    while (year, month) >= (acct_start, 1):
+        # Build month window
+        mo_start = datetime.datetime(year, month, 1, tzinfo=tz)
+        if month == 12:
+            mo_end = datetime.datetime(year + 1, 1, 1, tzinfo=tz)
+        else:
+            mo_end = datetime.datetime(year, month + 1, 1, tzinfo=tz)
 
-# ─────────────────────────────────────────────
-# COLLECT ONE (ACCOUNT × MONTH) BATCH
-# ─────────────────────────────────────────────
-def collect_month(
-    headers: dict,
-    handle: str,
-    account: str,
-    year: int,
-    month: int,
-    seen_ids: set,
-) -> list:
-    """
-    Fetch all tweets from `handle` in the given month.
-    Paginates until has_next_page is False.
-    Returns a list of CSV-ready row dicts.
-    """
-    since, until = month_window(year, month)
+        mo_key = mo_start.strftime("%Y-%m")
 
-    # Build query:
-    #   from:handle          — only this account's tweets
-    #   since:YYYY-MM-DD     — on or after
-    #   until:YYYY-MM-DD     — before (exclusive)
-    #   -filter:nativeretweets — no native RTs
-    quote_filter = "" if INCLUDE_QUOTES else " -filter:quote"
-    query = (
-        f"from:{handle} since:{since} until:{until}"
-        f" -filter:nativeretweets{quote_filter}"
-    )
+        # Skip months already checkpointed
+        if mo_key in done_months:
+            print(f"    {mo_key}    | (already done, skipping)")
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+            continue
 
-    new_rows  = []
-    cursor    = ""
-    page      = 0
+        since_ts = int(mo_start.timestamp())
+        until_ts = int(mo_end.timestamp())
 
-    while True:
-        page += 1
-        data = search_tweets(headers, query, cursor)
-
-        if not data:
-            break
-
-        for raw in data.get("tweets") or []:
-            row = parse_tweet(raw, handle, account, seen_ids)
-            if row:
-                new_rows.append(row)
-
-        if not data.get("has_next_page"):
-            break
-
-        cursor = data.get("next_cursor", "")
-        if not cursor:
-            break
-
+        mo_tweets = fetch_window(headers, handle, since_ts, until_ts)
         time.sleep(API_DELAY_SEC)
 
-    return new_rows
+        if not mo_tweets:
+            print(f"    {mo_key}    | (empty)")
+            mark_month_done(progress, handle, year, month)
+            done_months.add(mo_key)
+            month -= 1
+            if month == 0:
+                month = 12
+                year -= 1
+            continue
+
+        if len(mo_tweets) < MAX_PAGE:
+            # Got everything for the month in one shot
+            rows = [r for raw in mo_tweets
+                    for r in [parse_tweet(raw, handle, account, seen_ids)] if r]
+            if rows:
+                append_rows(rows)
+                total_new += len(rows)
+            print(f"    {mo_key}    | "
+                  f"+{len(rows):3d} tweets ({len(mo_tweets)} raw, 1 req) | total: {total_new:,}")
+        else:
+            # Full page returned — drill into days to avoid missing tweets
+            mo_new = 0
+            mo_req = 0
+            for d_start, d_end in iter_days(mo_start, mo_end):
+                d_tweets = fetch_window(headers, handle,
+                                        int(d_start.timestamp()),
+                                        int(d_end.timestamp()))
+                mo_req += 1
+                rows = [r for raw in d_tweets
+                        for r in [parse_tweet(raw, handle, account, seen_ids)] if r]
+                if rows:
+                    append_rows(rows)
+                    mo_new    += len(rows)
+                    total_new += len(rows)
+                time.sleep(API_DELAY_SEC)
+
+            print(f"    {mo_key} (daily) | "
+                  f"+{mo_new:3d} tweets ({mo_req} req) | total: {total_new:,}")
+
+        # Checkpoint this month as done
+        mark_month_done(progress, handle, year, month)
+        done_months.add(mo_key)
+
+        # Step back one month
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+
+    return total_new
 
 
 # ─────────────────────────────────────────────
@@ -406,82 +384,34 @@ def main():
     seen_ids = load_existing_ids()
     progress = load_progress()
     headers  = get_headers()
+    done_set = set(progress.get("done", []))
 
-    last_handle = progress.get("last_handle", "")
-    last_year   = progress.get("last_year",   START_YEAR - 1)
-    last_month  = progress.get("last_month",  0)
-
-    account_list = list(ACCOUNTS.items())   # [(handle, display_name), ...]
-    all_months   = list(iter_months(START_YEAR, END_YEAR))
-    total_batches = len(account_list) * len(all_months)
-    batch_num     = 0
-
-    # Determine which account index to resume from
-    resume_account_idx = 0
-    if last_handle:
-        handles = [h for h, _ in account_list]
-        if last_handle in handles:
-            resume_account_idx = handles.index(last_handle)
-
-    print(f"\nTwitter collection: {len(account_list)} accounts × "
-          f"{len(all_months)} months = {total_batches:,} batches")
-    print(f"Date range: {START_YEAR}-01 → {END_YEAR}-12")
-    print(f"Retweets: excluded  |  Quote-tweets: {'included' if INCLUDE_QUOTES else 'excluded'}")
+    account_list = list(ACCOUNTS.items())
+    print(f"\nCollecting tweets for {len(account_list)} accounts | "
+          f"{START_YEAR}–{END_YEAR} | "
+          f"retweets excluded | "
+          f"quotes {'included' if INCLUDE_QUOTES else 'excluded'}")
     print(f"Output → {OUTPUT_CSV}   Progress → {PROGRESS_FILE}\n")
 
-    for acct_idx, (handle, account) in enumerate(account_list):
-
-        # Skip fully-completed accounts before the resume point
-        if acct_idx < resume_account_idx:
-            batch_num += len(all_months)
+    for idx, (handle, account) in enumerate(account_list, 1):
+        if handle in done_set:
+            print(f"[{idx:2d}/{len(account_list)}] @{handle} — already done, skipping")
             continue
 
         print(f"\n{'='*70}")
-        print(f"Account {acct_idx+1}/{len(account_list)}: @{handle}  ({account})")
+        print(f"[{idx:2d}/{len(account_list)}] @{handle}  ({account})")
         print(f"{'='*70}")
 
-        # Fetch account creation date — skip months before it existed
-        created_year, created_month = get_account_start(headers, handle)
-        if (created_year, created_month) > (START_YEAR, 1):
-            print(f"  [info] @{handle} created {created_year}-{created_month:02d}, "
-                  f"skipping earlier months")
+        new_count = collect_account(headers, handle, account, seen_ids, progress)
+
+        mark_done(progress, handle)
+        print(f"  ✓ @{handle} complete — {new_count:,} new tweets  "
+              f"(running total: {len(seen_ids):,})")
+
         time.sleep(API_DELAY_SEC)
 
-        for year, month in all_months:
-
-            # Skip months before account existed
-            if (year, month) < (created_year, created_month):
-                batch_num += 1
-                continue
-
-            batch_num += 1
-
-            # Skip months already completed within the resume account
-            if acct_idx == resume_account_idx and (year, month) <= (last_year, last_month):
-                continue
-
-            pct = batch_num / total_batches * 100
-            print(
-                f"  [{pct:5.1f}%]  {year}-{month:02d}  ...",
-                end="  ", flush=True,
-            )
-
-            new_rows = collect_month(headers, handle, account, year, month, seen_ids)
-
-            append_rows(new_rows)
-            save_progress(handle, year, month)
-
-            print(
-                f"+{len(new_rows):3d} tweets  "
-                f"(total saved: {len(seen_ids):,})"
-            )
-
-            time.sleep(API_DELAY_SEC)
-
     print(f"\n{'='*70}")
-    print(f"DONE.  {len(seen_ids):,} total tweets saved to {OUTPUT_CSV}")
-    print(f"\nTo restart from scratch: delete {OUTPUT_CSV} and {PROGRESS_FILE}")
-    print(f"To resume after interruption: just re-run the script.")
+    print(f"DONE.  {len(seen_ids):,} total tweets in {OUTPUT_CSV}")
 
 
 if __name__ == "__main__":
