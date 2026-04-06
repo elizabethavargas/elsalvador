@@ -1,0 +1,31 @@
+# ── Data files (too large / not code) ────────────────────────────
+*.csv
+*.json
+!package.json
+!package-lock.json
+
+# ── Model / embedding cache ───────────────────────────────────────
+*.npy
+*.pkl
+output/topics/
+output/rhetoric/
+
+# ── Python cache ──────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+output/logs/
+
+# ── Environment / secrets ─────────────────────────────────────────
+.env
+*.env
+
+# ── IDE ───────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
