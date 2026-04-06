@@ -391,34 +391,82 @@ def viz_examples(df):
 # ─────────────────────────────────────────────
 def viz_strategy_target_heatmap(df):
     print("[viz] strategy × target heatmap ...")
+    MAX_HOVER_TWEETS = 5   # tweets shown per cell on hover
+    PREVIEW_CHARS    = 130 # characters per tweet preview
+
     rows_exp = []
     for _, row in df.iterrows():
         for t in row["targets"].split("|"):
             for s in row["strategies"].split("|"):
                 if t and s:
-                    rows_exp.append({"target": t, "strategy": s})
+                    rows_exp.append({
+                        "target":   t,
+                        "strategy": s,
+                        "text":     row["text"],
+                        "date":     str(row["date"])[:10] if pd.notna(row["date"]) else "",
+                        "likes":    row.get("likes", 0),
+                    })
     if not rows_exp:
         return
 
-    cross = pd.DataFrame(rows_exp)
-    pivot = cross.groupby(["strategy","target"]).size().unstack(fill_value=0)
+    cross    = pd.DataFrame(rows_exp)
+    pivot    = cross.groupby(["strategy", "target"]).size().unstack(fill_value=0)
+    strategies = list(pivot.index)
+    targets    = list(pivot.columns)
+
+    # Build customdata: 2-D list matching pivot shape.
+    # Each cell holds a pre-formatted HTML string with the top tweets.
+    hover_texts = []
+    for strat in strategies:
+        row_texts = []
+        for targ in targets:
+            mask   = (cross["strategy"] == strat) & (cross["target"] == targ)
+            subset = cross[mask].sort_values("likes", ascending=False)
+            if subset.empty:
+                row_texts.append("(no tweets)")
+            else:
+                lines = []
+                for _, r in subset.head(MAX_HOVER_TWEETS).iterrows():
+                    preview = r["text"][:PREVIEW_CHARS]
+                    if len(r["text"]) > PREVIEW_CHARS:
+                        preview += "…"
+                    # escape angle brackets so Plotly renders the text safely
+                    preview = preview.replace("<", "&lt;").replace(">", "&gt;")
+                    lines.append(f"• [{r['date']}] {preview}")
+                extra = len(subset) - MAX_HOVER_TWEETS
+                if extra > 0:
+                    lines.append(f"  <i>… and {extra} more</i>")
+                row_texts.append("<br>".join(lines))
+        hover_texts.append(row_texts)
 
     fig = go.Figure(go.Heatmap(
         z=pivot.values,
-        x=list(pivot.columns),
-        y=list(pivot.index),
+        x=targets,
+        y=strategies,
         colorscale="Reds",
         text=pivot.values,
         texttemplate="%{text}",
-        hovertemplate="Strategy: %{y}<br>Target: %{x}<br>Count: %{z}<extra></extra>",
+        customdata=hover_texts,
+        hovertemplate=(
+            "<b>%{y}</b>  →  <b>%{x}</b><br>"
+            "Count: %{z}<br><br>"
+            "%{customdata}"
+            "<extra></extra>"
+        ),
         colorbar=dict(title="# tweets"),
     ))
     fig.update_layout(
         title="Which rhetoric strategies does Bukele use against which targets?",
-        height=400,
+        height=500,
         margin=dict(l=220, b=180),
         xaxis=dict(tickangle=-40, tickfont_size=10),
         yaxis=dict(tickfont_size=10),
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=12,
+            font_family="monospace",
+            namelength=-1,
+        ),
     )
     path = os.path.join(OUTPUT_DIR, "viz_strategy_target_heatmap.html")
     fig.write_html(path)
