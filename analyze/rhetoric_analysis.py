@@ -38,7 +38,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
-INPUT_CSV  = "tweets.csv"
+INPUT_CSV  = os.path.join("output", "data", "tweets.csv")
 OUTPUT_DIR = os.path.join("output", "rhetoric")
 
 # ─────────────────────────────────────────────

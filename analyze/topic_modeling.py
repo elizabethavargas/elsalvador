@@ -46,7 +46,7 @@ from collections import defaultdict
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-INPUT_CSV       = "tweets.csv"
+INPUT_CSV       = os.path.join("output", "data", "tweets.csv")
 OUTPUT_DIR      = os.path.join("output", "topics")
 EMBEDDINGS_FILE = os.path.join(OUTPUT_DIR, "embeddings.npy")
 CORPUS_IDS_FILE = os.path.join(OUTPUT_DIR, "corpus_ids.pkl")

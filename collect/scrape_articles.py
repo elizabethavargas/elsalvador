@@ -29,6 +29,9 @@ import time
 
 import requests
 
+# Allow imports of shared helpers (config, utils, cleaning) from project root
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import cleaning
 
 # ─────────────────────────────────────────────

@@ -54,8 +54,8 @@ MAX_RETRIES    = 5
 RETRY_BACKOFF  = 15    # seconds to wait on 429, multiplied by attempt number
 
 REQUEST_TIMEOUT = 30
-OUTPUT_CSV      = "tweets.csv"
-PROGRESS_FILE   = "twitter_progress.json"
+OUTPUT_CSV      = os.path.join("output", "data", "tweets.csv")
+PROGRESS_FILE   = os.path.join("output", "data", "twitter_progress.json")
 
 BASE_URL   = "https://api.twitterapi.io"
 SEARCH_EP  = f"{BASE_URL}/twitter/tweet/advanced_search"
@@ -121,6 +121,7 @@ def get_headers():
 # CSV HELPERS
 # ─────────────────────────────────────────────
 def init_csv():
+    os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
     if not os.path.exists(OUTPUT_CSV):
         with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
             csv.DictWriter(f, fieldnames=CSV_FIELDS).writeheader()
