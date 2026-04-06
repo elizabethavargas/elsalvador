@@ -21,6 +21,7 @@ OUTPUTS (output/bukele_critics/):
   critic_tweets.csv            — all matching tweets tagged with category/strategy
 """
 
+import json
 import os
 import re
 import csv
@@ -391,8 +392,6 @@ def viz_examples(df):
 # ─────────────────────────────────────────────
 def viz_strategy_target_heatmap(df):
     print("[viz] strategy × target heatmap ...")
-    MAX_HOVER_TWEETS = 5   # tweets shown per cell on hover
-    PREVIEW_CHARS    = 130 # characters per tweet preview
 
     rows_exp = []
     for _, row in df.iterrows():
@@ -404,41 +403,32 @@ def viz_strategy_target_heatmap(df):
                         "strategy": s,
                         "text":     row["text"],
                         "date":     str(row["date"])[:10] if pd.notna(row["date"]) else "",
-                        "likes":    row.get("likes", 0),
+                        "likes":    int(row.get("likes", 0) or 0),
+                        "retweets": int(row.get("retweets", 0) or 0),
                     })
     if not rows_exp:
         return
 
-    cross    = pd.DataFrame(rows_exp)
-    pivot    = cross.groupby(["strategy", "target"]).size().unstack(fill_value=0)
+    cross      = pd.DataFrame(rows_exp)
+    pivot      = cross.groupby(["strategy", "target"]).size().unstack(fill_value=0)
     strategies = list(pivot.index)
     targets    = list(pivot.columns)
 
-    # Build customdata: 2-D list matching pivot shape.
-    # Each cell holds a pre-formatted HTML string with the top tweets.
-    hover_texts = []
+    # Build tweet lookup keyed by (strategy, target) — all tweets, full text,
+    # sorted by likes descending.  Will be embedded as JSON in the HTML file.
+    tweet_lookup = {}
     for strat in strategies:
-        row_texts = []
+        tweet_lookup[strat] = {}
         for targ in targets:
             mask   = (cross["strategy"] == strat) & (cross["target"] == targ)
             subset = cross[mask].sort_values("likes", ascending=False)
-            if subset.empty:
-                row_texts.append("(no tweets)")
-            else:
-                lines = []
-                for _, r in subset.head(MAX_HOVER_TWEETS).iterrows():
-                    preview = r["text"][:PREVIEW_CHARS]
-                    if len(r["text"]) > PREVIEW_CHARS:
-                        preview += "…"
-                    # escape angle brackets so Plotly renders the text safely
-                    preview = preview.replace("<", "&lt;").replace(">", "&gt;")
-                    lines.append(f"• [{r['date']}] {preview}")
-                extra = len(subset) - MAX_HOVER_TWEETS
-                if extra > 0:
-                    lines.append(f"  <i>… and {extra} more</i>")
-                row_texts.append("<br>".join(lines))
-        hover_texts.append(row_texts)
+            tweet_lookup[strat][targ] = [
+                {"date": r["date"], "text": r["text"],
+                 "likes": r["likes"], "retweets": r["retweets"]}
+                for _, r in subset.iterrows()
+            ]
 
+    # Hover shows only the count + a "click to expand" prompt.
     fig = go.Figure(go.Heatmap(
         z=pivot.values,
         x=targets,
@@ -446,30 +436,128 @@ def viz_strategy_target_heatmap(df):
         colorscale="Reds",
         text=pivot.values,
         texttemplate="%{text}",
-        customdata=hover_texts,
         hovertemplate=(
             "<b>%{y}</b>  →  <b>%{x}</b><br>"
-            "Count: %{z}<br><br>"
-            "%{customdata}"
+            "%{z} tweet(s)<br>"
+            "<i>Click cell to read all tweets below</i>"
             "<extra></extra>"
         ),
         colorbar=dict(title="# tweets"),
     ))
     fig.update_layout(
-        title="Which rhetoric strategies does Bukele use against which targets?",
+        title="Which rhetoric strategies does Bukele use against which targets? "
+              "(click a cell to read tweets)",
         height=500,
         margin=dict(l=220, b=180),
         xaxis=dict(tickangle=-40, tickfont_size=10),
         yaxis=dict(tickfont_size=10),
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=12,
-            font_family="monospace",
-            namelength=-1,
-        ),
     )
+
+    # Render to a standalone HTML div (no full page yet)
+    plot_div = fig.to_html(full_html=False, include_plotlyjs="cdn")
+
+    # JavaScript: on click, look up tweets and render them in a panel below
+    js = r"""
+<script>
+(function() {
+  const TWEETS = """ + json.dumps(tweet_lookup, ensure_ascii=False) + r""";
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\n/g,'<br>');
+  }
+
+  function renderPanel(strat, targ) {
+    const tweets = (TWEETS[strat] || {})[targ] || [];
+    const panel  = document.getElementById('tweet-panel');
+    const header = document.getElementById('panel-header');
+    header.textContent = strat + '  →  ' + targ +
+                         '  (' + tweets.length + ' tweet' +
+                         (tweets.length !== 1 ? 's' : '') + ')';
+    const list = document.getElementById('tweet-list');
+    list.innerHTML = '';
+    if (tweets.length === 0) {
+      list.innerHTML = '<li style="color:#888">(no tweets)</li>';
+    } else {
+      tweets.forEach(function(t) {
+        const li = document.createElement('li');
+        li.innerHTML =
+          '<span class="tw-meta">' + t.date +
+          ' &nbsp;·&nbsp; ♥ ' + t.likes.toLocaleString() +
+          ' &nbsp;·&nbsp; 🔁 ' + t.retweets.toLocaleString() + '</span><br>' +
+          '<span class="tw-text">' + esc(t.text) + '</span>';
+        list.appendChild(li);
+      });
+    }
+    panel.style.display = 'block';
+    panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const gd = document.querySelector('.js-plotly-plot');
+    if (!gd) return;
+    gd.on('plotly_click', function(data) {
+      const pt = data.points[0];
+      renderPanel(pt.y, pt.x);
+    });
+  });
+})();
+</script>
+"""
+
+    css = """
+<style>
+  body { font-family: sans-serif; }
+  #tweet-panel {
+    display: none;
+    max-width: 900px;
+    margin: 24px auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px 28px;
+    background: #fafafa;
+  }
+  #panel-header {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 16px;
+    color: #333;
+  }
+  #tweet-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #tweet-list li {
+    border-bottom: 1px solid #e5e5e5;
+    padding: 14px 0;
+    line-height: 1.55;
+  }
+  #tweet-list li:last-child { border-bottom: none; }
+  .tw-meta {
+    font-size: 0.82em;
+    color: #777;
+    display: block;
+    margin-bottom: 5px;
+  }
+  .tw-text { font-size: 0.97em; color: #222; }
+</style>
+"""
+
+    full_html = (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        + css
+        + "</head><body>"
+        + plot_div
+        + "<div id='tweet-panel'><div id='panel-header'></div>"
+        + "<ul id='tweet-list'></ul></div>"
+        + js
+        + "</body></html>"
+    )
+
     path = os.path.join(OUTPUT_DIR, "viz_strategy_target_heatmap.html")
-    fig.write_html(path)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(full_html)
     print(f"  -> {path}")
 
 
