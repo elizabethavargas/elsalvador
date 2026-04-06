@@ -1,14 +1,26 @@
-# ── Data files (too large / not code) ────────────────────────────
-*.csv
-*.json
-!package.json
-!package-lock.json
+# ── Generated data (collected, not code) ─────────────────────────
+output/data/
 
-# ── Model / embedding cache ───────────────────────────────────────
-*.npy
-*.pkl
+# ── Analysis outputs (regenerable) ───────────────────────────────
 output/topics/
 output/rhetoric/
+output/analysis/
+output/logs/
+output/raw_html/
+output/transparencia/
+output/el_salvador_political_dataset.csv
+output/el_salvador_political_dataset.jsonl
+
+# ── Stray data files from old layout (before reorganization) ──────
+*.csv
+*.npy
+*.pkl
+
+# ── Progress / state files ────────────────────────────────────────
+# (keep patterns, not specific filenames, so new ones are auto-ignored)
+*_progress.json
+checkpoint.json
+gdelt_progress.json
 
 # ── Python cache ──────────────────────────────────────────────────
 __pycache__/
@@ -17,15 +29,19 @@ __pycache__/
 *.pyd
 .Python
 
-# ── Logs ──────────────────────────────────────────────────────────
-*.log
-output/logs/
-
 # ── Environment / secrets ─────────────────────────────────────────
 .env
 *.env
+
+# ── Virtual environments ──────────────────────────────────────────
+.venv/
+venv/
+env/
 
 # ── IDE ───────────────────────────────────────────────────────────
 .idea/
 .vscode/
 *.swp
+
+# ── macOS ─────────────────────────────────────────────────────────
+.DS_Store
