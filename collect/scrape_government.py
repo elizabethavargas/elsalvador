@@ -60,7 +60,8 @@ SOURCES = [
 
 START_YEAR = 2015
 END_YEAR   = 2025
-OUTPUT_CSV = os.path.join("output", "government_articles.csv")
+REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_CSV = os.path.join(REPO_ROOT, "output", "government_articles.csv")
 OUTPUT_FIELDS = ["url", "source_name", "title", "text", "date",
                  "year", "month", "word_count"]
 

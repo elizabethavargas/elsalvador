@@ -1,5 +1,6 @@
 # ── Generated data (collected, not code) ─────────────────────────
 output/data/
+collect/output/   # stray output from running collector inside collect/ dir
 
 # ── Analysis outputs (regenerable) ───────────────────────────────
 output/topics/

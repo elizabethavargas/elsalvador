@@ -54,8 +54,12 @@ MAX_RETRIES    = 5
 RETRY_BACKOFF  = 15    # seconds to wait on 429, multiplied by attempt number
 
 REQUEST_TIMEOUT = 30
-OUTPUT_CSV      = os.path.join("output", "data", "tweets.csv")
-PROGRESS_FILE   = os.path.join("output", "data", "twitter_progress.json")
+
+# Paths are anchored to the repo root so the script works regardless of
+# which directory it is launched from.
+REPO_ROOT     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_CSV    = os.path.join(REPO_ROOT, "output", "data", "tweets.csv")
+PROGRESS_FILE = os.path.join(REPO_ROOT, "output", "data", "twitter_progress.json")
 
 BASE_URL   = "https://api.twitterapi.io"
 SEARCH_EP  = f"{BASE_URL}/twitter/tweet/advanced_search"

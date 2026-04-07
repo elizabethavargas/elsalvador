@@ -31,14 +31,15 @@ import requests
 
 # Allow imports of shared helpers (config, utils, cleaning) from project root
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, REPO_ROOT)
 import cleaning
 
 # ─────────────────────────────────────────────
 # DEFAULTS
 # ─────────────────────────────────────────────
-DEFAULT_INPUT   = "gdelt_urls.csv"
-DEFAULT_OUTPUT  = "articles_text.csv"
+DEFAULT_INPUT   = os.path.join(REPO_ROOT, "output", "gdelt_urls.csv")
+DEFAULT_OUTPUT  = os.path.join(REPO_ROOT, "output", "articles_text.csv")
 DEFAULT_WORKERS = 8          # concurrent threads
 DEFAULT_BATCH   = 25         # flush to disk every N articles (keep low for safety)
 REQUEST_TIMEOUT = 15

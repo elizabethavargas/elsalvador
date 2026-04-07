@@ -464,12 +464,14 @@ def _append_jsonl(jsonl_path: Path, records: list) -> None:
 # ─────────────────────────────────────────────────────────────
 # MAIN SCRAPER
 # ─────────────────────────────────────────────────────────────
+_REPO_ROOT = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 def run(
     only_id_tipo: Optional[int] = None,
     only_institution: Optional[int] = None,
     do_download: bool = False,
     resume: bool = False,
-    output_dir: Path = Path("output/transparencia"),
+    output_dir: Path = _REPO_ROOT / "output" / "transparencia",
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     files_dir = output_dir / "files"
@@ -601,8 +603,9 @@ def _parse_args() -> argparse.Namespace:
         help="Resume from checkpoint (skip already-completed institutions)",
     )
     p.add_argument(
-        "--output-dir", type=Path, default=Path("output/transparencia"),
-        help="Root output directory (default: output/transparencia/)",
+        "--output-dir", type=Path,
+        default=Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) / "output" / "transparencia",
+        help="Root output directory (default: <repo_root>/output/transparencia/)",
     )
     p.add_argument(
         "--delay", type=float, default=1.5,
