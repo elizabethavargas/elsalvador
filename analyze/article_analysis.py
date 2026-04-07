@@ -23,8 +23,9 @@ warnings.filterwarnings("ignore")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-INPUT_CSV = "output/el_salvador_political_dataset.csv"
-OUTPUT_DIR = "output/article_analysis"
+REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+INPUT_CSV  = os.path.join(REPO_ROOT, "output", "el_salvador_political_dataset.csv")
+OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "article_analysis")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------

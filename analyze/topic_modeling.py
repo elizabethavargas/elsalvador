@@ -46,8 +46,9 @@ from collections import defaultdict
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-INPUT_CSV       = os.path.join("output", "data", "tweets.csv")
-OUTPUT_DIR      = os.path.join("output", "topics")
+REPO_ROOT       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+INPUT_CSV       = os.path.join(REPO_ROOT, "output", "data", "tweets.csv")
+OUTPUT_DIR      = os.path.join(REPO_ROOT, "output", "topics")
 EMBEDDINGS_FILE = os.path.join(OUTPUT_DIR, "embeddings.npy")
 CORPUS_IDS_FILE = os.path.join(OUTPUT_DIR, "corpus_ids.pkl")
 

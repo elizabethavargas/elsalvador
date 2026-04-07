@@ -28,7 +28,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
-OUTPUT_DIR = os.path.join("output", "public_metrics")
+REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "public_metrics")
 
 # ─────────────────────────────────────────────
 # HARDCODED DATA (scraped from Freedom House + polling aggregators)
@@ -511,7 +512,7 @@ def viz_combined(fh_df, approval_df):
                         .median().reset_index().rename(columns={"ym":"date"}))
 
     # Try to load rhetoric metrics from tweet analysis (optional)
-    rhetoric_path = os.path.join("output", "rhetoric", "rhetoric_metrics.csv")
+    rhetoric_path = os.path.join(REPO_ROOT, "output", "rhetoric", "rhetoric_metrics.csv")
     rhetoric_df = None
     if os.path.exists(rhetoric_path):
         rhetoric_df = pd.read_csv(rhetoric_path, parse_dates=["ym"])
