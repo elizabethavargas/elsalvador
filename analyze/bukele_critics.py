@@ -209,10 +209,12 @@ def wrap(text, width=90):
 def load_and_tag():
     print("[load] Reading tweets and tagging ...")
     rows = []
+    total_bukele = 0
     with open(INPUT_CSV, encoding="utf-8-sig", errors="replace") as f:
         for r in csv.DictReader(f):
             if r.get("handle", "").lower() != "nayibbukele":
                 continue
+            total_bukele += 1
             text = r.get("text", "")
             targets    = match_patterns(text, TARGETS)
             strategies = match_patterns(text, STRATEGIES)
@@ -226,8 +228,8 @@ def load_and_tag():
     df = df[df["date"].notna()].copy()
     df["ym"] = df["date"].dt.to_period("M").dt.to_timestamp()
     df["year"] = df["date"].dt.year
-    print(f"[load] {len(df):,} tweets match target/strategy patterns")
-    return df
+    print(f"[load] {len(df):,} / {total_bukele:,} Bukele tweets match target/strategy patterns")
+    return df, total_bukele
 
 
 # ─────────────────────────────────────────────
@@ -394,19 +396,23 @@ def viz_examples(df):
 def viz_strategy_target_heatmap(df):
     print("[viz] strategy × target heatmap ...")
 
+    NO_TARGET   = "(no specific target)"
+    NO_STRATEGY = "(no specific strategy)"
+
     rows_exp = []
     for _, row in df.iterrows():
-        for t in row["targets"].split("|"):
-            for s in row["strategies"].split("|"):
-                if t and s:
-                    rows_exp.append({
-                        "target":   t,
-                        "strategy": s,
-                        "text":     row["text"],
-                        "date":     str(row["date"])[:10] if pd.notna(row["date"]) else "",
-                        "likes":    int(row.get("likes", 0) or 0),
-                        "retweets": int(row.get("retweets", 0) or 0),
-                    })
+        targets  = [t for t in row["targets"].split("|")    if t] or [NO_TARGET]
+        strats   = [s for s in row["strategies"].split("|") if s] or [NO_STRATEGY]
+        for t in targets:
+            for s in strats:
+                rows_exp.append({
+                    "target":   t,
+                    "strategy": s,
+                    "text":     row["text"],
+                    "date":     str(row["date"])[:10] if pd.notna(row["date"]) else "",
+                    "likes":    int(row.get("likes", 0) or 0),
+                    "retweets": int(row.get("retweets", 0) or 0),
+                })
     if not rows_exp:
         return
 
@@ -575,13 +581,14 @@ def save_csv(df):
 # ─────────────────────────────────────────────
 # TERMINAL SUMMARY
 # ─────────────────────────────────────────────
-def print_summary(df):
+def print_summary(df, total_bukele):
     print("\n" + "="*65)
     print("SUMMARY")
     print("="*65)
 
+    pct = len(df) / total_bukele * 100 if total_bukele else 0
     print(f"\n{len(df):,} tweets match critic-targeting patterns")
-    print(f"({len(df)/6931*100:.1f}% of all Bukele tweets in dataset)\n")
+    print(f"({pct:.1f}% of {total_bukele:,} total Bukele tweets in dataset)\n")
 
     # Top targets
     target_counts = Counter()
@@ -610,15 +617,10 @@ def print_summary(df):
         print(f"  {r['text'][:200]}")
         print()
 
-    print("IMPORTANT NOTE: This dataset excludes retweets and quote-tweets.")
-    print("Bukele's most direct attacks on critics are often quote-tweets,")
-    print("so these ~236 tweets are a lower bound. The patterns are consistent:")
-    print("  1. Scare quotes undermine legitimacy of the 'human rights' label")
-    print("  2. Links HR orgs to Open Society/Soros funding (delegitimization)")
-    print("  3. Frames all critics as 'defenders of pandilleros'")
-    print("  4. Claims double standard: 'why doesn't CIDH condemn X?'")
-    print("  5. Frames international pressure as neo-colonial interference")
-    print("  6. OEA is 'el Ministerio de Colonias de Washington'")
+    print("NOTE: counts above reflect matches per target/strategy category;")
+    print("a single tweet can match multiple targets or strategies.")
+    print("Tweets with no matched target appear as '(no specific target)' in")
+    print("the heatmap; tweets with no strategy as '(no specific strategy)'.")
 
 
 # ─────────────────────────────────────────────
@@ -630,7 +632,7 @@ def main():
     print("Bukele Critic-Response Rhetoric Analysis")
     print("="*65)
 
-    df = load_and_tag()
+    df, total_bukele = load_and_tag()
     if len(df) == 0:
         print("No matching tweets found.")
         return
@@ -641,7 +643,7 @@ def main():
     viz_strategies(df)
     viz_examples(df)
     viz_strategy_target_heatmap(df)
-    print_summary(df)
+    print_summary(df, total_bukele)
 
     print(f"\nOpen output/bukele_critics/viz_strategies.html for the overview.")
     print(f"Open output/bukele_critics/viz_examples.html to read actual tweets.")
