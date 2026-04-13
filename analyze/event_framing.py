@@ -2,24 +2,27 @@
 event_framing.py — Compare how government tweets vs independent media
 framed the same key political events.
 
-For each event with sufficient coverage on both sides, computes
-log-odds(government tweets / media articles) to surface words that
-each side emphasized or avoided.
+For each event, generates a side-by-side word cloud pair:
+  LEFT  (red)  — words most used in government tweets
+  RIGHT (blue) — words most used in media articles
+Word size reflects frequency within the ±30-day window.
 
 OUTPUTS (output/event_framing/):
-  viz_butterfly.html   — per-event diverging bars (event dropdown)
-  viz_scatter.html     — word-level scatter govt% vs media%, event dropdown
+  viz_wordclouds.html  — all events stacked, govt vs media clouds
 """
 
+import base64
 import csv
+import io
 import math
 import os
 import re
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import matplotlib
+matplotlib.use("Agg")
+from wordcloud import WordCloud
 
 REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TWEETS_CSV = os.path.join(REPO_ROOT, "output", "data", "tweets.csv")
@@ -161,278 +164,125 @@ def window_tokens(tweet_rows, article_rows, event_date):
 
 
 # ─────────────────────────────────────────────
-# VIZ 1: Butterfly chart (event dropdown)
+# WORD CLOUD HELPERS
 # ─────────────────────────────────────────────
-def viz_butterfly(tweet_rows, article_rows):
-    print("[viz] butterfly chart ...")
-    TOP = 18
+def make_cloud_png(freq_dict, colormap, max_words=80, width=700, height=380):
+    """Render a WordCloud to a base64 PNG string."""
+    if not freq_dict:
+        return None
+    wc = WordCloud(
+        width=width, height=height,
+        background_color="white",
+        colormap=colormap,
+        max_words=max_words,
+        prefer_horizontal=0.85,
+        min_font_size=10,
+        max_font_size=100,
+        relative_scaling=0.55,
+        collocations=False,
+    ).generate_from_frequencies(freq_dict)
+    buf = io.BytesIO()
+    wc.to_image().save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
 
-    events_data = []
+
+# ─────────────────────────────────────────────
+# VIZ: Side-by-side word clouds per event
+# ─────────────────────────────────────────────
+def viz_wordclouds(tweet_rows, article_rows):
+    print("[viz] word clouds ...")
+
+    sections = []   # list of HTML blocks, one per event
+
     for label, date_str in KEY_EVENTS:
         ed = date.fromisoformat(date_str)
         t_tok, a_tok = window_tokens(tweet_rows, article_rows, ed)
         t_count = Counter(t_tok)
         a_count = Counter(a_tok)
         n_t, n_a = len(t_tok), len(a_tok)
+
         if n_t < MIN_TWEETS or n_a < MIN_ARTICLES:
-            print(f"  [skip] {label}: {n_t} tweet tokens, {n_a} article tokens")
+            print(f"  [skip] {label}: {n_t} tweet tokens / {n_a} article tokens")
             continue
+
         print(f"  {label}: {n_t:,} tweet tokens, {n_a:,} article tokens")
 
-        all_words = (set(t_count) | set(a_count))
-        scores = {}
-        for w in all_words:
-            if t_count[w] < MIN_FREQ and a_count[w] < MIN_FREQ:
-                continue
-            scores[w] = log_odds(t_count[w], n_t, a_count[w], n_a)
+        # filter to words with at least MIN_FREQ occurrences on their dominant side
+        t_freq = {w: c for w, c in t_count.items() if c >= MIN_FREQ}
+        a_freq = {w: c for w, c in a_count.items() if c >= MIN_FREQ}
 
-        # top govt words (positive) and top media words (negative)
-        sorted_scores = sorted(scores.items(), key=lambda x: x[1])
-        media_words = [(w, s) for w, s in sorted_scores[:TOP]]    # most negative
-        govt_words  = [(w, s) for w, s in sorted_scores[-TOP:]]   # most positive
+        govt_png  = make_cloud_png(t_freq, "Reds")
+        media_png = make_cloud_png(a_freq, "Blues")
 
-        events_data.append({
-            "label":       label,
-            "media_words": media_words,
-            "govt_words":  govt_words,
-            "n_tweets":    n_t,
-            "n_articles":  n_a,
-        })
+        def img_tag(b64):
+            if not b64:
+                return "<p style='color:#aaa;text-align:center;padding:60px'>no data</p>"
+            return f"<img src='data:image/png;base64,{b64}' style='width:100%;border-radius:6px'>"
 
-    if not events_data:
+        sections.append(f"""
+<div class="event-block">
+  <h2>{label}
+    <span class="meta">±{WINDOW_DAYS} days &nbsp;·&nbsp;
+      <span style="color:#c0392b">{n_t:,} tweet tokens</span> &nbsp;·&nbsp;
+      <span style="color:#2471a3">{n_a:,} article tokens</span>
+    </span>
+  </h2>
+  <div class="cloud-row">
+    <div class="cloud-col">
+      <div class="cloud-label govt">Government tweets</div>
+      {img_tag(govt_png)}
+    </div>
+    <div class="cloud-col">
+      <div class="cloud-label media">Media articles</div>
+      {img_tag(media_png)}
+    </div>
+  </div>
+</div>
+""")
+
+    if not sections:
         print("  No events had sufficient data.")
         return
 
-    fig = go.Figure()
-    buttons = []
+    html = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Event Framing: Government vs Media</title>
+<style>
+  body { font-family: 'Helvetica Neue', sans-serif; max-width: 1300px;
+         margin: 0 auto; padding: 24px 32px; background: #f9f9f9; color: #222; }
+  h1   { font-size: 1.5em; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 0.9em; margin-bottom: 36px; }
+  .event-block { background: white; border-radius: 10px;
+                 box-shadow: 0 1px 4px rgba(0,0,0,.08);
+                 padding: 24px 28px; margin-bottom: 36px; }
+  .event-block h2 { font-size: 1.2em; margin: 0 0 16px; }
+  .meta { font-size: 0.72em; font-weight: normal; color: #888;
+          margin-left: 10px; }
+  .cloud-row { display: flex; gap: 20px; }
+  .cloud-col { flex: 1; }
+  .cloud-label { font-size: 0.82em; font-weight: bold; letter-spacing: .04em;
+                 text-transform: uppercase; margin-bottom: 8px; }
+  .cloud-label.govt  { color: #c0392b; }
+  .cloud-label.media { color: #2471a3; }
+</style>
+</head>
+<body>
+<h1>Event Framing: Government Tweets vs Media Articles</h1>
+<p class="subtitle">
+  Each word cloud shows the most frequent words used within ±""" + str(WINDOW_DAYS) + """ days of the event.<br>
+  Word size = raw frequency in that window &nbsp;·&nbsp;
+  Government accounts: nayibbukele, PresidenciaSV, Gobierno_SV, AsambleaSV, FGR_SV<br>
+  Media outlets: La Página, El Mundo, Diario Co Latino, El Faro, Diario 1
+</p>
+""" + "\n".join(sections) + """
+</body>
+</html>"""
 
-    for i, ev in enumerate(events_data):
-        mw = ev["media_words"]   # negative scores → media-dominant
-        gw = ev["govt_words"]    # positive scores → govt-dominant
-
-        # Combine into one diverging chart
-        # media words: negative bars on left
-        m_labels = [w for w, _ in mw]
-        m_vals   = [s for _, s in mw]
-        # govt words: positive bars on right
-        g_labels = [w for w, _ in gw][::-1]
-        g_vals   = [s for _, s in gw][::-1]
-
-        all_labels = m_labels + g_labels
-        all_vals   = m_vals + g_vals
-        colors     = ["#457b9d"] * len(m_labels) + ["#e63946"] * len(g_labels)
-        hover      = [
-            f"<b>{w}</b><br>log-odds: {s:.2f}<br><i>↑ media emphasis</i>"
-            for w, s in mw
-        ] + [
-            f"<b>{w}</b><br>log-odds: {s:.2f}<br><i>↑ government emphasis</i>"
-            for w, s in gw[::-1]
-        ]
-
-        fig.add_trace(go.Bar(
-            x=all_vals,
-            y=all_labels,
-            orientation="h",
-            marker_color=colors,
-            visible=(i == 0),
-            name=ev["label"],
-            hovertemplate="%{customdata}<extra></extra>",
-            customdata=hover,
-        ))
-
-        visible = [j == i for j in range(len(events_data))]
-        buttons.append(dict(
-            method="update",
-            label=ev["label"],
-            args=[
-                {"visible": visible},
-                {"title": (
-                    f"<b>{ev['label']}</b> — framing gap<br>"
-                    f"<span style='color:#e63946'>■ Government tweets</span>"
-                    f"  <span style='color:#457b9d'>■ Media articles</span>"
-                    f"  ({ev['n_tweets']:,} tweet tokens · "
-                    f"{ev['n_articles']:,} article tokens · ±{WINDOW_DAYS}d)"
-                )},
-            ],
-        ))
-
-    first = events_data[0]
-    fig.update_layout(
-        title=(
-            f"<b>{first['label']}</b> — framing gap<br>"
-            f"<span style='color:#e63946'>■ Government tweets</span>"
-            f"  <span style='color:#457b9d'>■ Media articles</span>"
-            f"  ({first['n_tweets']:,} tweet tokens · "
-            f"{first['n_articles']:,} article tokens · ±{WINDOW_DAYS}d)"
-        ),
-        height=680,
-        margin=dict(l=160, r=40, t=110, b=60),
-        xaxis=dict(
-            title="← media emphasis  |  government emphasis →",
-            zeroline=True, zerolinecolor="#999", zerolinewidth=2,
-            showgrid=True, gridcolor="#eee",
-        ),
-        yaxis=dict(tickfont_size=12),
-        updatemenus=[dict(
-            buttons=buttons,
-            direction="down",
-            showactive=True,
-            x=0.0, xanchor="left",
-            y=1.15, yanchor="top",
-            bgcolor="white",
-            bordercolor="#ccc",
-        )],
-        plot_bgcolor="#fafafa",
-        paper_bgcolor="white",
-        shapes=[dict(
-            type="line", x0=0, x1=0, y0=-0.5, y1=len(events_data[0]["media_words"]) +
-            len(events_data[0]["govt_words"]) - 0.5,
-            line=dict(color="#666", width=1.5),
-        )],
-    )
-
-    path = os.path.join(OUTPUT_DIR, "viz_butterfly.html")
-    fig.write_html(path)
-    print(f"  -> {path}")
-
-
-# ─────────────────────────────────────────────
-# VIZ 2: Scatter — govt% vs media% per word
-# ─────────────────────────────────────────────
-def viz_scatter(tweet_rows, article_rows):
-    print("[viz] framing scatter ...")
-
-    fig = go.Figure()
-    buttons = []
-
-    for i, (label, date_str) in enumerate(KEY_EVENTS):
-        ed = date.fromisoformat(date_str)
-        t_tok, a_tok = window_tokens(tweet_rows, article_rows, ed)
-        t_count = Counter(t_tok)
-        a_count = Counter(a_tok)
-        n_t, n_a = len(t_tok), len(a_tok)
-        if n_t < MIN_TWEETS or n_a < MIN_ARTICLES:
-            continue
-
-        # word frequency as % of total tokens
-        all_words = {w for w in (set(t_count) | set(a_count))
-                     if t_count[w] >= MIN_FREQ or a_count[w] >= MIN_FREQ}
-
-        words  = list(all_words)
-        x_vals = [t_count.get(w, 0) / n_t * 100 for w in words]  # govt %
-        y_vals = [a_count.get(w, 0) / n_a * 100 for w in words]  # media %
-
-        # compute how far each word is from the diagonal (govt - media)
-        divergence = [x - y for x, y in zip(x_vals, y_vals)]
-
-        # label the 12 most divergent words on each side
-        indexed = sorted(enumerate(divergence), key=lambda t: t[1])
-        label_idxs = {idx for idx, _ in indexed[:12]} | {idx for idx, _ in indexed[-12:]}
-        text_labels = [words[j] if j in label_idxs else "" for j in range(len(words))]
-
-        # color: red = govt-dominant, blue = media-dominant, gray = shared
-        point_colors = []
-        for d in divergence:
-            if d > 0.05:
-                point_colors.append("#e63946")
-            elif d < -0.05:
-                point_colors.append("#457b9d")
-            else:
-                point_colors.append("#aaa")
-
-        max_val = max(max(x_vals), max(y_vals), 0.01) * 1.1
-
-        fig.add_trace(go.Scatter(
-            x=x_vals, y=y_vals,
-            mode="markers+text",
-            text=text_labels,
-            textposition="top center",
-            textfont=dict(size=10),
-            marker=dict(
-                color=point_colors,
-                size=7,
-                opacity=0.75,
-                line=dict(width=0),
-            ),
-            visible=(i == 0),
-            name=label,
-            customdata=[
-                f"<b>{w}</b><br>Govt tweets: {x:.2f}%<br>Media articles: {y:.2f}%"
-                for w, x, y in zip(words, x_vals, y_vals)
-            ],
-            hovertemplate="%{customdata}<extra></extra>",
-        ))
-
-        # diagonal reference line
-        fig.add_trace(go.Scatter(
-            x=[0, max_val], y=[0, max_val],
-            mode="lines",
-            line=dict(color="#ccc", dash="dot", width=1),
-            showlegend=False,
-            hoverinfo="skip",
-            visible=(i == 0),
-        ))
-
-        visible_flags = []
-        for j in range(i * 2):
-            visible_flags.append(False)
-        visible_flags.extend([True, True])
-        for j in range((len(KEY_EVENTS) - i - 1) * 2):
-            visible_flags.append(False)
-
-        buttons.append(dict(
-            method="update",
-            label=label,
-            args=[
-                {"visible": visible_flags},
-                {"title": (
-                    f"<b>{label}</b> — word frequency: government vs media<br>"
-                    f"<span style='color:#e63946'>■ govt-dominant</span>  "
-                    f"<span style='color:#457b9d'>■ media-dominant</span>  "
-                    f"<span style='color:#aaa'>■ shared</span>  "
-                    f"(±{WINDOW_DAYS}d window)"
-                )},
-                {"xaxis.range": [0, max_val], "yaxis.range": [0, max_val]},
-            ],
-        ))
-
-    if not fig.data:
-        return
-
-    first_label = KEY_EVENTS[0][0]
-    fig.update_layout(
-        title=(
-            f"<b>{first_label}</b> — word frequency: government vs media<br>"
-            f"<span style='color:#e63946'>■ govt-dominant</span>  "
-            f"<span style='color:#457b9d'>■ media-dominant</span>  "
-            f"<span style='color:#aaa'>■ shared</span>  "
-            f"(±{WINDOW_DAYS}d window)"
-        ),
-        height=620,
-        margin=dict(l=80, r=40, t=110, b=80),
-        xaxis=dict(
-            title="% of government tweet tokens",
-            showgrid=True, gridcolor="#eee",
-        ),
-        yaxis=dict(
-            title="% of media article tokens",
-            showgrid=True, gridcolor="#eee",
-        ),
-        updatemenus=[dict(
-            buttons=buttons,
-            direction="down",
-            showactive=True,
-            x=0.0, xanchor="left",
-            y=1.15, yanchor="top",
-            bgcolor="white",
-            bordercolor="#ccc",
-        )],
-        plot_bgcolor="#fafafa",
-        paper_bgcolor="white",
-    )
-
-    path = os.path.join(OUTPUT_DIR, "viz_scatter.html")
-    fig.write_html(path)
+    path = os.path.join(OUTPUT_DIR, "viz_wordclouds.html")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
     print(f"  -> {path}")
 
 
@@ -445,15 +295,12 @@ def main():
     print("Event Framing: Government Tweets vs Media Articles")
     print("=" * 60)
     print(f"Window: ±{WINDOW_DAYS} days around each event")
-    print(f"Government accounts: {', '.join(sorted(GOVT_ACCOUNTS))}")
-    print(f"Media outlets: {', '.join(sorted(MEDIA_DOMAINS))}")
     print()
 
     tweet_rows   = load_tweets()
     article_rows = load_articles()
 
-    viz_butterfly(tweet_rows, article_rows)
-    viz_scatter(tweet_rows, article_rows)
+    viz_wordclouds(tweet_rows, article_rows)
 
     print("\nDone. Outputs in", OUTPUT_DIR)
 
