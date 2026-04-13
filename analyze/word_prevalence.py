@@ -54,8 +54,8 @@ STOP = {
     "diario","colatino","lapagina","pagina","página","elfaro","elmundo",
     "mundo","prensa","grafica","noticias","noticia","redaccion","redacción",
     "periodico","periódico","digital","online","web","sitio",
-    # ── Scraping split-word artifacts ─────────────────────────────────────
-    "gina","smoda","moda",
+    # ── Scraping split-word / section-name artifacts ──────────────────────
+    "gina","smoda","moda","talento",
     # ── Scraping / navigation / 404 artifacts ─────────────────────────────
     "not","found","error","page","section","loading","enabled","browser",
     "existe","encontramos","buscas","regresando","encontrar","encontrado",
