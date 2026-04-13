@@ -79,6 +79,9 @@ STOP = {
     "gina","smoda","moda",
     # ── Scraping / navigation / 404 artifacts ─────────────────────────────
     "not","found","error","page","section","loading","enabled","browser",
+    "existe","encontramos","buscas","regresando","encontrar","encontrado",
+    "buscar","búsqueda","busqueda","regresar","volviendo","intentalo",
+    "inténtalo","disponible","eliminada","movida","trasladada",
     "navegando","leer","continuar","siguiente","anterior","volver","inicio",
     "menu","menú","home","cookies","privacidad","términos","terminos",
     "política","reservados","derechos","copyright","publicidad","anuncio",
