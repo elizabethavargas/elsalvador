@@ -47,6 +47,22 @@ STOP = {
     "aquí","ahí","allí","allá","acá","qué","cómo","cuándo","quién","cuál",
     "eso","esa","esos","algo","nada","nadie","cada","otro","otros","otra",
     "otras","ellos","ellas","ella","él","usted","ustedes","nos","vos",
+    # ── El Salvador / demonyms ────────────────────────────────────────────
+    "salvador","salvadoreño","salvadoreña","salvadoreños","salvadoreñas",
+    "elsalvador",
+    # ── Media outlet names / branding ─────────────────────────────────────
+    "diario","colatino","lapagina","elfaro","elmundo","prensa","grafica",
+    "noticias","noticia","redaccion","redacción","periodico","periódico",
+    "digital","online","web","sitio",
+    # ── Scraping / navigation / 404 artifacts ─────────────────────────────
+    "not","found","error","page","section","loading","enabled","browser",
+    "navegando","leer","continuar","siguiente","anterior","volver","inicio",
+    "menu","menú","home","cookies","privacidad","términos","terminos",
+    "política","reservados","derechos","copyright","publicidad","anuncio",
+    "suscribete","suscríbete","suscribirse","subscríbete","registrate",
+    "compartir","facebook","instagram","youtube","whatsapp","telegram",
+    "javascript","archivo","enlace","acceso","buscar","search","click",
+    "ver","leer","nota","artículo","articulo","imagen","foto","video",
 }
 
 ACCOUNT_COLORS = {
