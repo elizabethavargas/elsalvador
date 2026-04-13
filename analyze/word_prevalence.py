@@ -51,9 +51,11 @@ STOP = {
     "salvador","salvadoreño","salvadoreña","salvadoreños","salvadoreñas",
     "elsalvador",
     # ── Media outlet names / branding ─────────────────────────────────────
-    "diario","colatino","lapagina","elfaro","elmundo","prensa","grafica",
-    "noticias","noticia","redaccion","redacción","periodico","periódico",
-    "digital","online","web","sitio",
+    "diario","colatino","lapagina","pagina","página","elfaro","elmundo",
+    "mundo","prensa","grafica","noticias","noticia","redaccion","redacción",
+    "periodico","periódico","digital","online","web","sitio",
+    # ── Scraping split-word artifacts ─────────────────────────────────────
+    "gina","smoda","moda",
     # ── Scraping / navigation / 404 artifacts ─────────────────────────────
     "not","found","error","page","section","loading","enabled","browser",
     "navegando","leer","continuar","siguiente","anterior","volver","inicio",
