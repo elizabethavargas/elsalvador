@@ -26,7 +26,7 @@ from wordcloud import WordCloud
 
 REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TWEETS_CSV = os.path.join(REPO_ROOT, "output", "data", "tweets.csv")
-MEDIA_CSV  = os.path.join(REPO_ROOT, "output", "articles_text.csv")
+MEDIA_CSV  = os.path.join(REPO_ROOT, "output", "articles_text_clean.csv")
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "event_framing")
 
 # Government accounts used as "official narrative" side
@@ -67,7 +67,7 @@ STOP = {
     "hemos","vamos","han","fué","deja","dicho","algo","nada","nadie",
     "otro","otros","otra","otras","ellos","ellas","ella","él","usted",
     "ustedes","nos","vos","eso","algo","ahí","allí","aquí","acá",
-    "https","http","co","rt","pic","twitter","amp","via",
+    "https","http","co","rt","pic","twitter","amp","via","hace","meses","horas",
     # ── El Salvador / demonyms (appear in every document, uninformative) ──
     "salvador","salvadoreño","salvadoreña","salvadoreños","salvadoreñas",
     "elsalvador",

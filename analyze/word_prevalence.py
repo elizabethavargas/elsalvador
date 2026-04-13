@@ -21,7 +21,7 @@ from plotly.subplots import make_subplots
 REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TWEETS_CSV = os.path.join(REPO_ROOT, "output", "data", "tweets.csv")
 PRESS_CSV  = os.path.join(REPO_ROOT, "output", "el_salvador_political_dataset.csv")
-MEDIA_CSV  = os.path.join(REPO_ROOT, "output", "articles_text.csv")
+MEDIA_CSV  = os.path.join(REPO_ROOT, "output", "articles_text_clean.csv")
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "word_prevalence")
 
 # ─────────────────────────────────────────────
@@ -42,7 +42,7 @@ STOP = {
     "tras","contra","través","están","estamos","estaba","estar","había",
     "hemos","vamos","nuestro","ser","sido","por","les","les",
     "deja","dicho","dar","dar","les","han","fue","fué",
-    "https","http","co","rt","pic","twitter","amp",
+    "https","http","co","rt","pic","twitter","amp","hace","meses","horas",
     # extra common filler
     "aquí","ahí","allí","allá","acá","qué","cómo","cuándo","quién","cuál",
     "eso","esa","esos","algo","nada","nadie","cada","otro","otros","otra",
