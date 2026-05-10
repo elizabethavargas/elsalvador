@@ -19,39 +19,33 @@ This project analyzes ten years of Spanish-language political communication in E
 ### Prerequisites
 
 - Python 3.10+
-- Install dependencies:
+- Install all dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Additionally, for word cloud generation:
-
-```bash
-pip install wordcloud matplotlib
-```
-
-For paper generation:
-
-```bash
-pip install python-docx
-```
-
 ### Data
 
-All input data files are included in the `output/` directory:
+Data files are too large for GitHub (~660 MB total) and are hosted on Google Cloud Storage. Download them with:
+
+```bash
+python download_data.py
+```
+
+This populates `output/` and `output/data/` with the four files expected by the analysis scripts:
 
 | File | Description |
 |------|-------------|
 | `output/articles_master.csv` | ~140k+ news articles from 6 Salvadoran outlets (2015–2025) |
-| `output/el_salvador_political_dataset.csv` | Government press releases and transcripts (Presidencia, Asamblea) |
 | `output/articles_text_clean.csv` | Cleaned article text used in analysis |
-| `collect/twitter_collector.py` | Script to re-collect tweets (requires X/Twitter API credentials in `.env`) |
+| `output/el_salvador_political_dataset.csv` | Government press releases and transcripts (Presidencia, Asamblea) |
+| `output/data/tweets.csv` | ~162k government tweets from 5 official accounts (2015–2025) |
 
-Twitter data requires API credentials. Set `BEARER_TOKEN` in a `.env` file:
+To re-collect tweets from scratch, run `collect/twitter_collector.py`. It uses [twitterapi.io](https://twitterapi.io). Set your API key in a `.env` file:
 
 ```
-BEARER_TOKEN=your_token_here
+TWITTERAPI_IO_KEY=your_key_here
 ```
 
 ---
@@ -107,6 +101,7 @@ python paper/build_paper.py
 ```
 ├── README.md                          # This file
 ├── requirements.txt                   # Python dependencies
+├── download_data.py                   # Downloads corpus data from Google Cloud Storage
 ├── config.py                          # Political keywords, event timeline
 ├── cleaning.py                        # Shared HTML extraction and text normalization
 ├── utils.py                           # HTTP helpers, date parsing

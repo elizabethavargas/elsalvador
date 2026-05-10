@@ -9,12 +9,17 @@ pandas>=2.0.0
 # Date parsing
 python-dateutil>=2.8.0
 
-# Optional: Cloudflare bypass (significantly reduces 403s on elsalvador.com)
-# pip install cloudscraper
-
-# ── Topic modeling ────────────────────────────────────────────────────────────
-sentence-transformers>=2.7.0
-# umap-learn and hdbscan (standalone) both have native lib issues on Python 3.8;
-# topic_modeling.py uses sklearn PCA + sklearn.cluster.HDBSCAN instead
-scikit-learn>=1.3.0
+# Visualization
 plotly>=5.20.0
+wordcloud>=1.9.0
+matplotlib>=3.8.0
+
+# Topic modeling
+sentence-transformers>=2.7.0
+scikit-learn>=1.3.0
+
+# Paper generation
+python-docx>=1.1.0
+
+# Optional: Cloudflare bypass (reduces 403s on some Salvadoran outlets)
+# cloudscraper>=1.2.71
