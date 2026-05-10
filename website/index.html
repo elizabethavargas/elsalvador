@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Governing Through Narrative — El Salvador Political Text Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue:   #1d4ed8;
+      --red:    #b91c1c;
+      --dark:   #111827;
+      --mid:    #374151;
+      --light:  #6b7280;
+      --bg:     #f9fafb;
+      --white:  #ffffff;
+      --border: #e5e7eb;
+      --accent: #dbeafe;
+      --gov:    #1d4ed8;
+      --media:  #b91c1c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--white); border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+    .nav-brand { font-weight: 600; font-size: 0.95rem; color: var(--dark); text-decoration: none; }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { font-size: 0.875rem; color: var(--light); text-decoration: none; transition: color .15s; }
+    .nav-links a:hover { color: var(--blue); }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f 0%, #111827 60%, #1a0a0a 100%);
+      color: var(--white); padding: 5rem 2rem 4rem; text-align: center;
+    }
+    .hero-flag { display: flex; justify-content: center; margin-bottom: 1.5rem; }
+    .hero-flag span { display: inline-block; width: 14px; height: 56px; }
+    .hero-flag span:nth-child(1) { background: #0F47AF; }
+    .hero-flag span:nth-child(2) { background: #FFFFFF; }
+    .hero-flag span:nth-child(3) { background: #0F47AF; }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      line-height: 1.2; margin-bottom: 1rem;
+      max-width: 800px; margin-left: auto; margin-right: auto;
+    }
+    .hero h1 em { color: #93c5fd; font-style: normal; }
+    .hero .subtitle {
+      font-size: 1.05rem; color: #cbd5e1; max-width: 640px;
+      margin: 0 auto 2rem; font-weight: 300;
+    }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: .65rem 1.4rem; border-radius: 6px; font-size: .9rem;
+      font-weight: 500; cursor: pointer; text-decoration: none; transition: all .15s;
+      display: inline-block;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,.35); }
+    .btn-outline:hover { background: rgba(255,255,255,.1); }
+
+    /* STATS STRIP */
+    .stats-strip {
+      background: var(--white); border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; color: var(--blue); }
+    .stat-label { font-size: .75rem; color: var(--light); text-transform: uppercase; letter-spacing: .05em; margin-top: .15rem; }
+
+    /* SECTIONS */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 4.5rem 0; }
+    section.white { background: var(--white); }
+    section.gray  { background: var(--bg); }
+
+    .section-tag {
+      display: inline-block; font-size: .72rem; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--blue); background: var(--accent);
+      padding: .25rem .7rem; border-radius: 4px; margin-bottom: .75rem;
+    }
+    .section-header { margin-bottom: 2.5rem; }
+    .section-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.25; color: var(--dark);
+    }
+    .section-header p { color: var(--mid); margin-top: .6rem; max-width: 700px; line-height: 1.7; }
+
+    /* PROSE */
+    .prose { max-width: 720px; }
+    .prose p { color: var(--mid); line-height: 1.8; margin-bottom: 1rem; font-size: .95rem; }
+    .prose p:last-child { margin-bottom: 0; }
+
+    /* PULL QUOTE */
+    .pull-quote {
+      border-left: 4px solid var(--blue); padding: 1rem 1.5rem;
+      background: var(--accent); border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .pull-quote p { font-size: 1.05rem; font-style: italic; color: var(--dark); font-weight: 500; margin: 0; }
+    .pull-quote cite { font-size: .8rem; color: var(--light); display: block; margin-top: .5rem; font-style: normal; }
+
+    /* CONTEXT GRID */
+    .context-grid {
+      display: grid; grid-template-columns: 1fr 380px; gap: 3rem; align-items: start;
+    }
+    @media (max-width: 800px) { .context-grid { grid-template-columns: 1fr; } }
+    .context-stat-box {
+      background: var(--dark); color: var(--white); border-radius: 12px; padding: 2rem;
+    }
+    .context-stat-box h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: #9ca3af; margin-bottom: 1.2rem; }
+    .big-stat { margin-bottom: 1.5rem; }
+    .big-stat .num { font-size: 2.8rem; font-weight: 700; line-height: 1; }
+    .big-stat .num.red { color: #f87171; }
+    .big-stat .num.green { color: #34d399; }
+    .big-stat .label { font-size: .8rem; color: #9ca3af; margin-top: .3rem; }
+    .stat-divider { border: none; border-top: 1px solid #374151; margin: 1.2rem 0; }
+
+    /* FINDING SECTIONS */
+    .finding {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border); margin-bottom: 2.5rem;
+      background: var(--white);
+    }
+    .finding-header {
+      background: var(--dark); color: var(--white);
+      padding: 1.25rem 1.75rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .finding-num {
+      font-size: 2rem; font-weight: 700; color: #374151; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .finding-header h3 { font-size: 1.05rem; font-weight: 600; }
+    .finding-header p { font-size: .85rem; color: #9ca3af; margin-top: .2rem; }
+    .finding-body {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    }
+    @media (max-width: 860px) { .finding-body { grid-template-columns: 1fr; } }
+    .finding-left { padding: 1.75rem; border-right: 1px solid var(--border); }
+    .finding-right { padding: 1.75rem; }
+    .finding-body.full { display: block; }
+    .finding-body.full .finding-left { border-right: none; }
+
+    /* INLINE TABLES */
+    .data-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .75rem; }
+    .data-table th {
+      text-align: left; padding: .5rem .7rem; background: #f3f4f6;
+      font-weight: 600; color: var(--mid); border-bottom: 2px solid var(--border);
+    }
+    .data-table td { padding: .45rem .7rem; border-bottom: 1px solid var(--border); color: var(--mid); }
+    .data-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; color: var(--dark); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table .highlight td { background: #eff6ff; }
+    .table-note { font-size: .75rem; color: var(--light); margin-top: .5rem; font-style: italic; }
+
+    /* BAR CHARTS */
+    .bar-chart { margin-top: 1rem; }
+    .bar-row { display: grid; grid-template-columns: 90px 1fr; gap: .5rem; align-items: center; margin-bottom: .6rem; }
+    .bar-label { font-size: .78rem; color: var(--mid); font-weight: 500; text-align: right; padding-right: .5rem; }
+    .bar-tracks { display: flex; flex-direction: column; gap: 3px; }
+    .bar-track { display: flex; align-items: center; height: 14px; background: #f3f4f6; border-radius: 3px; overflow: visible; }
+    .bar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; position: relative; min-width: 3px; }
+    .bar-fill.gov   { background: var(--gov); }
+    .bar-fill.media { background: var(--media); opacity: 0.85; }
+    .bar-val { font-size: .68rem; font-weight: 600; color: var(--white); padding: 0 4px; white-space: nowrap; }
+    .bar-val.outside { color: var(--mid); padding-left: 5px; }
+    .bar-legend { display: flex; gap: 1.2rem; margin-top: .75rem; }
+    .bar-legend-item { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--mid); }
+    .swatch { width: 12px; height: 12px; border-radius: 2px; }
+    .swatch.gov   { background: var(--gov); }
+    .swatch.media { background: var(--media); opacity: 0.85; }
+
+    /* CONVERGENCE BARS */
+    .conv-row { margin-bottom: 1rem; }
+    .conv-label { font-size: .82rem; font-weight: 600; color: var(--dark); margin-bottom: .3rem; display: flex; justify-content: space-between; }
+    .conv-badge { font-size: .72rem; font-weight: 700; color: #16a34a; background: #dcfce7; padding: .1rem .4rem; border-radius: 3px; }
+    .conv-track { background: #f3f4f6; border-radius: 4px; height: 20px; position: relative; overflow: hidden; }
+    .conv-bar-before { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px 0 0 4px; background: #93c5fd; }
+    .conv-bar-after  { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; background: var(--blue); opacity: .85; }
+    .conv-labels { display: flex; justify-content: space-between; margin-top: .3rem; font-size: .7rem; color: var(--light); }
+
+    /* IFRAMES */
+    .viz-full {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; margin-bottom: 1.5rem;
+    }
+    .viz-full-header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .viz-full-header h3 { font-size: .95rem; font-weight: 600; }
+    .viz-full-header p { font-size: .82rem; color: var(--light); margin-top: .15rem; max-width: 600px; }
+    .viz-full-header a { font-size: .8rem; color: var(--blue); text-decoration: none; font-weight: 500; white-space: nowrap; }
+    .viz-full-header a:hover { text-decoration: underline; }
+    .viz-iframe-wrap { width: 100%; height: 520px; overflow: hidden; }
+    .viz-iframe-wrap iframe { width: 100%; height: 100%; border: none; }
+    .viz-iframe-wrap.tall { height: 650px; }
+
+    /* VIZ GRID */
+    .viz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px,1fr)); gap: 1.2rem; }
+    .viz-card {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; transition: box-shadow .2s;
+    }
+    .viz-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.09); }
+    .viz-card-body { padding: 1.2rem 1.2rem .7rem; }
+    .viz-card h3 { font-size: .95rem; font-weight: 600; margin-bottom: .3rem; }
+    .viz-card p { font-size: .83rem; color: var(--light); line-height: 1.55; }
+    .viz-card-footer {
+      padding: .7rem 1.2rem; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .viz-tag { font-size: .7rem; background: #f3f4f6; padding: .2rem .5rem; border-radius: 3px; color: var(--light); }
+    .viz-link {
+      font-size: .8rem; font-weight: 500; color: var(--blue);
+      text-decoration: none; display: flex; align-items: center; gap: .3rem;
+    }
+    .viz-link:hover { text-decoration: underline; }
+    .viz-link::after { content: "→"; }
+
+    /* TIMELINE */
+    .tl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    @media (max-width: 700px) { .tl-grid { grid-template-columns: 1fr; } }
+    .timeline { position: relative; padding-left: 1.5rem; }
+    .timeline::before { content:''; position:absolute; left:.45rem; top:0; bottom:0; width:2px; background:var(--border); }
+    .timeline-item { position: relative; margin-bottom: 1.6rem; }
+    .timeline-item::before {
+      content:''; position:absolute; left:-1.1rem; top:.35rem;
+      width:10px; height:10px; border-radius:50%;
+      background: var(--blue); border: 2px solid var(--white);
+      box-shadow: 0 0 0 2px var(--blue);
+    }
+    .timeline-item.red::before { background: var(--red); box-shadow: 0 0 0 2px var(--red); }
+    .timeline-date { font-size:.72rem; font-weight:600; color:var(--light); text-transform:uppercase; letter-spacing:.05em; }
+    .timeline-item h4 { font-size:.92rem; font-weight:600; margin:.1rem 0 .2rem; }
+    .timeline-item p { font-size:.83rem; color:var(--mid); line-height: 1.55; }
+
+    /* DATA */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+    .data-block h3 { font-size: .95rem; font-weight: 600; margin-bottom: .6rem; }
+    .data-block p, .data-block li { font-size: .88rem; color: var(--mid); margin-bottom: .4rem; line-height: 1.6; }
+    .data-block ul { padding-left: 1.2rem; }
+    .source-table { width: 100%; border-collapse: collapse; font-size: .83rem; margin-top: .6rem; }
+    .source-table th { text-align: left; padding: .4rem .6rem; background: #f3f4f6; font-weight: 600; color: var(--mid); }
+    .source-table td { padding: .4rem .6rem; border-top: 1px solid var(--border); color: var(--mid); }
+    .source-table td:last-child { text-align: right; font-weight: 500; color: var(--dark); }
+
+    /* FOOTER */
+    footer { background: var(--dark); color: #9ca3af; padding: 2rem; text-align: center; font-size: .85rem; }
+    footer a { color: #60a5fa; text-decoration: none; }
+
+    abbr {
+      text-decoration: underline dotted #9ca3af;
+      cursor: help;
+      position: relative;
+    }
+    abbr::after {
+      content: attr(title);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(100% + 6px);
+      background: #111827;
+      color: #f9fafb;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 9999;
+      box-shadow: 0 2px 8px rgba(0,0,0,.35);
+      opacity: 0;
+      transition: opacity .12s;
+    }
+    abbr:hover::after { opacity: 1; }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .stats-strip { gap: 1rem; }
+      .two-col, .tl-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="/">El Salvador Political Text</a>
+  <div class="nav-links">
+    <a href="#context">Context</a>
+    <a href="#findings">Findings</a>
+    <a href="#analysis">All Visualizations</a>
+    <a href="#events">Timeline</a>
+    <a href="#data">Data</a>
+    <a href="paper/governing_through_narrative.docx">Paper →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-flag" aria-hidden="true">
+    <span></span><span></span><span></span>
+  </div>
+  <h1>Governing Through <em>Narrative</em></h1>
+  <p class="subtitle">
+    A text-as-data analysis of how Bukele's government constructed and coordinated its public
+    narrative — and what independent media said instead. 162k tweets, 140k news articles, 2015–2025.
+  </p>
+  <div class="hero-buttons">
+    <a class="btn btn-primary" href="#findings">See the findings</a>
+    <a class="btn btn-outline" href="#analysis">Explore all visualizations</a>
+  </div>
+</div>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stat"><div class="stat-num">162k</div><div class="stat-label">Government tweets</div></div>
+  <div class="stat"><div class="stat-num">5</div><div class="stat-label">Institutional accounts</div></div>
+  <div class="stat"><div class="stat-num">140k+</div><div class="stat-label">News articles</div></div>
+  <div class="stat"><div class="stat-num">20+</div><div class="stat-label">News sources</div></div>
+  <div class="stat"><div class="stat-num">2015–2025</div><div class="stat-label">Coverage</div></div>
+  <div class="stat"><div class="stat-num">52%</div><div class="stat-label">Post-capture convergence</div></div>
+</div>
+
+<!-- CONTEXT SECTION -->
+<section class="gray" id="context">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Context</div>
+      <h2>A country at the breaking point — and the man who said he'd fix it</h2>
+    </div>
+    <div class="context-grid">
+      <div class="prose">
+        <p>
+          Before Nayib Bukele, El Salvador was one of the most dangerous countries on earth.
+          In 2015, the country recorded <strong>103 homicides per 100,000 people</strong>, the highest rate
+          in the Western Hemisphere. Gang extortion was so widespread that small businesses paid
+          protection fees as a matter of survival. Ordinary Salvadorans avoided whole neighborhoods.
+          The political establishment — the right-wing ARENA party and the left-wing FMLN, trading
+          power since the 1992 peace accords — had no credible answer.
+        </p>
+        <p>
+          Bukele won the 2019 presidential election with 53 percent of the vote in the first round,
+          the first candidate in Salvadoran democratic history to win without a runoff. A former
+          publicist and mayor of San Salvador, he ran as a genuine outsider against both parties.
+          His appeal was not ideological. It was anti-institutional: he promised to dismantle a
+          corrupt system that had failed working-class communities for three decades.
+        </p>
+        <p>
+          The security improvements under his administration are real. After the Estado de Excepción
+          was declared in March 2022, homicide rates fell from 53 per 100,000 in 2018 to
+          approximately 2 per 100,000 in 2024. Many Salvadorans who could not previously walk
+          in their own neighborhoods describe a transformation in daily life. Bukele's approval
+          ratings have not meaningfully declined despite sustained international criticism — because
+          the criticism often comes from people who were not the ones afraid.
+        </p>
+        <div class="pull-quote">
+          <p>"When human rights organizations criticize prison conditions, Bukele frames them as
+          wealthy elites who prioritize criminals' rights over honest citizens' safety. The argument
+          lands because it contains a grain of truth."</p>
+          <cite>From the paper: Section 2.3</cite>
+        </div>
+        <p>
+          What distinguishes Bukele from a conventional security-focused leader is his mastery of
+          spectacle. A former publicist, he self-labeled "the world's coolest dictator" on social
+          media, deployed slick propaganda videos to brand CECOT — a 40,000-capacity megaprison —
+          as a symbol of state power, and announced Bitcoin legal tender at a theatrical beachside
+          event with pyrotechnics. Governance, for Bukele, is inseparable from performance.
+          That is precisely the communicative mode that spin dictatorship theory predicts.
+        </p>
+        <p>
+          This project uses computational text analysis to ask whether that performance leaves a
+          measurable footprint in government language — and whether the gap between what the
+          government says and what independent media reports can be quantified at scale.
+        </p>
+      </div>
+      <div>
+        <div class="context-stat-box">
+          <h3>El Salvador by the numbers</h3>
+          <div class="big-stat">
+            <div class="num red">103</div>
+            <div class="label">homicides per 100k in 2015 — highest in the Western Hemisphere</div>
+          </div>
+          <hr class="stat-divider">
+          <div class="big-stat">
+            <div class="num" style="color:#60a5fa">53.1</div>
+            <div class="label">homicides per 100k in 2018, year before Bukele took office</div>
+          </div>
+          <hr class="stat-divider">
+          <div class="big-stat">
+            <div class="num green">~2</div>
+            <div class="label">homicides per 100k in 2024 (government-reported; independent analysts note potential undercounting)</div>
+          </div>
+          <hr class="stat-divider">
+          <div class="big-stat">
+            <div class="num red">80k+</div>
+            <div class="label">people arrested under Estado de Excepción since March 2022 — largest per-capita mass incarceration in the hemisphere</div>
+          </div>
+          <hr class="stat-divider">
+          <div class="big-stat">
+            <div class="num" style="color:#fbbf24">85%</div>
+            <div class="label">of the vote Bukele won in the February 2024 re-election</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINDINGS SECTION -->
+<section class="white" id="findings">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Key Findings</div>
+      <h2>Three computational signatures of spin dictatorship</h2>
+      <p>
+        Drawing on 162k government tweets and 140k news articles, the analysis finds three
+        patterns consistent with what Guriev and Treisman (2022) call spin dictatorship: coordinated
+        messaging, agenda-setting without accountability language, and narrative construction at scale.
+      </p>
+    </div>
+
+    <!-- FINDING 1 -->
+    <div class="finding">
+      <div class="finding-header">
+        <div class="finding-num">01</div>
+        <div>
+          <h3>Institutional capture left a measurable linguistic footprint</h3>
+          <p>After Bukele's loyalists took over the Asamblea and FGR in May 2021, those accounts began speaking like him.</p>
+        </div>
+      </div>
+      <div class="finding-body">
+        <div class="finding-left">
+          <p style="font-size:.88rem; color:var(--mid); margin-bottom:1rem; line-height:1.7;">
+            On May 1, 2021, Bukele's new legislative supermajority dismissed El Salvador's
+            Constitutional Court and Attorney General within hours of convening. We measure the
+            linguistic impact of that capture by computing cosine similarity between each
+            institutional Twitter account and @nayibbukele before and after the takeover.
+            Every account converged — but the captured institutions converged most.
+          </p>
+
+          <!-- Convergence bar chart -->
+          <div style="margin-top:1rem;">
+            <div class="conv-row">
+              <div class="conv-label">@AsambleaSV <span class="conv-badge">+52%</span></div>
+              <div class="conv-track">
+                <div class="conv-bar-after"  style="width:63.8%"></div>
+                <div class="conv-bar-before" style="width:42.0%; background:#bfdbfe;"></div>
+              </div>
+              <div class="conv-labels"><span>Before: 0.293</span><span>After: 0.445</span></div>
+            </div>
+            <div class="conv-row">
+              <div class="conv-label">@PresidenciaSV <span class="conv-badge">+52%</span></div>
+              <div class="conv-track">
+                <div class="conv-bar-after"  style="width:87.8%"></div>
+                <div class="conv-bar-before" style="width:57.9%; background:#bfdbfe;"></div>
+              </div>
+              <div class="conv-labels"><span>Before: 0.404</span><span>After: 0.613</span></div>
+            </div>
+            <div class="conv-row">
+              <div class="conv-label">@Gobierno_SV <span class="conv-badge">+29%</span></div>
+              <div class="conv-track">
+                <div class="conv-bar-after"  style="width:100%"></div>
+                <div class="conv-bar-before" style="width:77.4%; background:#bfdbfe;"></div>
+              </div>
+              <div class="conv-labels"><span>Before: 0.540</span><span>After: 0.698</span></div>
+            </div>
+            <div class="conv-row">
+              <div class="conv-label">@FGR_SV <span class="conv-badge">+26%</span></div>
+              <div class="conv-track">
+                <div class="conv-bar-after"  style="width:45.7%"></div>
+                <div class="conv-bar-before" style="width:36.2%; background:#bfdbfe;"></div>
+              </div>
+              <div class="conv-labels"><span>Before: 0.253</span><span>After: 0.319</span></div>
+            </div>
+            <div style="margin-top:.6rem; font-size:.73rem; color:var(--light);">
+              Cosine similarity to @nayibbukele. Light blue = before May 2021; dark blue = after.
+              Bars scaled to @Gobierno_SV's post-capture value (0.698 = 100%).
+            </div>
+          </div>
+        </div>
+        <div class="finding-right">
+          <p style="font-size:.85rem; color:var(--mid); line-height:1.7; margin-bottom:1rem;">
+            The two accounts whose leadership was most directly replaced show the largest jumps
+            (both +52%). The FGR's smaller increase (+26%) reflects a natural floor: prosecutorial
+            language is structurally constrained by legal terminology. That it converged at all
+            is notable. Spin dictatorship theory predicts exactly this: captured bodies adopt
+            the captor's vocabulary.
+          </p>
+          <p style="font-size:.85rem; color:var(--mid); line-height:1.7; margin-bottom:1rem;">
+            This finding quantifies something previously documented only qualitatively.
+            Communicative convergence may be a more sensitive early-warning signal of
+            authoritarian consolidation than formal institutional change — messaging can
+            shift before legal structures fully align.
+          </p>
+          <table class="data-table">
+            <thead><tr><th>Account</th><th class="num">Before</th><th class="num">After</th><th class="num">Change</th></tr></thead>
+            <tbody>
+              <tr class="highlight"><td>@AsambleaSV</td><td class="num">0.293</td><td class="num">0.445</td><td class="num" style="color:#16a34a">+51.9%</td></tr>
+              <tr><td>@FGR_SV</td><td class="num">0.253</td><td class="num">0.319</td><td class="num" style="color:#16a34a">+26.1%</td></tr>
+              <tr class="highlight"><td>@PresidenciaSV</td><td class="num">0.404</td><td class="num">0.613</td><td class="num" style="color:#16a34a">+51.7%</td></tr>
+              <tr><td>@Gobierno_SV</td><td class="num">0.540</td><td class="num">0.698</td><td class="num" style="color:#16a34a">+29.3%</td></tr>
+            </tbody>
+          </table>
+          <p class="table-note">Cosine similarity to @nayibbukele. Computed over unigram frequency vectors after stop-word removal.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINDING 2 -->
+    <div class="finding">
+      <div class="finding-header">
+        <div class="finding-num">02</div>
+        <div>
+          <h3>The Estado de Excepción: government engages security, avoids accountability</h3>
+          <p>Government tweets discuss the crackdown — but almost never use the words "arbitrary," "innocent," or "torture."</p>
+        </div>
+      </div>
+      <div class="finding-body">
+        <div class="finding-left">
+          <p style="font-size:.88rem; color:var(--mid); margin-bottom:1rem; line-height:1.7;">
+            During 2022–2024, we compare how often key terms appear in government tweets versus
+            domestic media articles (per 1,000 units). The pattern is asymmetric: the government
+            actively uses security vocabulary (pandillas, terroristas) but systematically avoids
+            the language of rights and accountability.
+          </p>
+          <!-- CSS bar chart -->
+          <div class="bar-chart">
+            <div class="bar-legend">
+              <div class="bar-legend-item"><div class="swatch gov"></div>Government tweets</div>
+              <div class="bar-legend-item"><div class="swatch media"></div>Media articles</div>
+            </div>
+            <div style="margin-top:.75rem;">
+              <!-- pandill- -->
+              <div class="bar-row">
+                <div class="bar-label"><abbr title="gang stem — pandilla = gang, pandillero = gang member">pandill-</abbr></div>
+                <div class="bar-tracks">
+                  <div class="bar-track"><div class="bar-fill gov" style="width:47.1%"><span class="bar-val">92.0</span></div></div>
+                  <div class="bar-track"><div class="bar-fill media" style="width:61.2%"><span class="bar-val">119.4</span></div></div>
+                </div>
+              </div>
+              <!-- seguridad -->
+              <div class="bar-row">
+                <div class="bar-label"><abbr title="security">seguridad</abbr></div>
+                <div class="bar-tracks">
+                  <div class="bar-track"><div class="bar-fill gov" style="width:32.9%"><span class="bar-val">64.2</span></div></div>
+                  <div class="bar-track"><div class="bar-fill media" style="width:100%"><span class="bar-val">195.2</span></div></div>
+                </div>
+              </div>
+              <!-- excepci- -->
+              <div class="bar-row">
+                <div class="bar-label"><abbr title="state of exception (excepción = emergency decree suspending rights)">excepci-</abbr></div>
+                <div class="bar-tracks">
+                  <div class="bar-track"><div class="bar-fill gov" style="width:13.7%"><span class="bar-val">26.8</span></div></div>
+                  <div class="bar-track"><div class="bar-fill media" style="width:60.8%"><span class="bar-val">118.6</span></div></div>
+                </div>
+              </div>
+              <!-- derechos -->
+              <div class="bar-row">
+                <div class="bar-label" style="color:var(--red);font-weight:700;"><abbr title="rights — derechos humanos = human rights">derechos</abbr></div>
+                <div class="bar-tracks">
+                  <div class="bar-track"><div class="bar-fill gov" style="width:7.4%"><span class="bar-val outside" style="color:var(--gov); padding-left:6px;">14.5</span></div></div>
+                  <div class="bar-track"><div class="bar-fill media" style="width:81.4%"><span class="bar-val">158.9</span></div></div>
+                </div>
+              </div>
+              <!-- arbitrar- -->
+              <div class="bar-row">
+                <div class="bar-label" style="color:var(--red);font-weight:700;"><abbr title="arbitrary (as in arbitrary detention)">arbitrar-</abbr></div>
+                <div class="bar-tracks">
+                  <div class="bar-track"><div class="bar-fill gov" style="width:0.5%; min-width:3px;"></div><span style="font-size:.68rem;color:var(--gov);margin-left:5px;">0.9</span></div>
+                  <div class="bar-track"><div class="bar-fill media" style="width:21.1%"><span class="bar-val">41.2</span></div></div>
+                </div>
+              </div>
+              <!-- tortur- -->
+              <div class="bar-row">
+                <div class="bar-label" style="color:var(--red);font-weight:700;"><abbr title="torture">tortur-</abbr></div>
+                <div class="bar-tracks">
+                  <div class="bar-track"><div class="bar-fill gov" style="width:0.1%; min-width:3px;"></div><span style="font-size:.68rem;color:var(--gov);margin-left:5px;">0.2</span></div>
+                  <div class="bar-track"><div class="bar-fill media" style="width:9.8%"><span class="bar-val">19.1</span></div></div>
+                </div>
+              </div>
+            </div>
+            <p style="font-size:.72rem;color:var(--light);margin-top:.6rem;">Per 1,000 tweets or article-units. Bars scaled to media "seguridad" (195.2 = 100%). Red labels = accountability vocabulary.</p>
+          </div>
+        </div>
+        <div class="finding-right">
+          <p style="font-size:.85rem; color:var(--mid); line-height:1.7; margin-bottom:1rem;">
+            The government is not silent on the Estado de Excepción. It actively uses security
+            vocabulary. But the avoidance is selective: it targets precisely the sub-vocabulary
+            that invites accountability. Government tweets use "tortur-" at 1% the rate of
+            independent media. They use "arbitrar-" (arbitrary) at 2% the rate.
+          </p>
+          <p style="font-size:.85rem; color:var(--mid); line-height:1.7; margin-bottom:1rem;">
+            This pattern — actively engaging a topic while systematically suppressing
+            accountability language about it — is what Guriev and Treisman (2022) describe as
+            positive agenda-setting. The frame is constructed, not absent.
+          </p>
+          <table class="data-table">
+            <thead><tr><th>Term</th><th class="num">Gov / 1k</th><th class="num">Media / 1k</th><th class="num">Ratio</th></tr></thead>
+            <tbody>
+              <tr><td><abbr title="gang stem — pandilla = gang, pandillero = gang member">pandill-</abbr></td><td class="num">92.0</td><td class="num">119.4</td><td class="num">0.77×</td></tr>
+              <tr><td><abbr title="security">seguridad</abbr></td><td class="num">64.2</td><td class="num">195.2</td><td class="num">0.33×</td></tr>
+              <tr><td><abbr title="state of exception (excepción = emergency decree suspending rights)">excepci-</abbr></td><td class="num">26.8</td><td class="num">118.6</td><td class="num">0.23×</td></tr>
+              <tr class="highlight"><td><abbr title="rights — derechos humanos = human rights">derechos</abbr></td><td class="num">14.5</td><td class="num">158.9</td><td class="num" style="color:var(--red)">0.09×</td></tr>
+              <tr><td><abbr title="captured / arrested">capturado</abbr></td><td class="num">20.7</td><td class="num">60.7</td><td class="num">0.34×</td></tr>
+              <tr class="highlight"><td><abbr title="arbitrary (as in arbitrary detention)">arbitrar-</abbr></td><td class="num">0.9</td><td class="num">41.2</td><td class="num" style="color:var(--red)">0.02×</td></tr>
+              <tr><td><abbr title="innocent">inocente</abbr></td><td class="num">0.9</td><td class="num">23.9</td><td class="num" style="color:var(--red)">0.04×</td></tr>
+              <tr class="highlight"><td><abbr title="torture">tortur-</abbr></td><td class="num">0.2</td><td class="num">19.1</td><td class="num" style="color:var(--red)">0.01×</td></tr>
+            </tbody>
+          </table>
+          <p class="table-note">Gov tweets n = 34,084; media articles (domestic) n = 14,101. 2022–2024.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINDING 3 -->
+    <div class="finding">
+      <div class="finding-header">
+        <div class="finding-num">03</div>
+        <div>
+          <h3>Government messaging shifted sharply at each political turning point</h3>
+          <p>"Bitcoin" spiked in 2021 then disappeared. "Pandillas" tripled after the Estado de Excepción. "Derechos" quietly declined.</p>
+        </div>
+      </div>
+      <div class="finding-body full">
+        <div class="finding-left" style="border-right:none; padding-bottom:0;">
+          <p style="font-size:.88rem; color:var(--mid); margin-bottom:1.25rem; line-height:1.7; max-width:700px;">
+            Term frequency per 1,000 government tweets by year reveals a government that adjusts
+            its vocabulary in response to political events — not gradually, but in sharp discrete
+            jumps. Bitcoin dominates 2021 messaging then nearly vanishes. Gang vocabulary triples
+            after March 2022. Accountability terms like "derechos" (rights) and "democracia"
+            hold flat or decline while security vocabulary rises.
+          </p>
+          <div style="overflow-x:auto;">
+            <table class="data-table" style="min-width:620px;">
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th class="num">2019</th>
+                  <th class="num">2020</th>
+                  <th class="num">2021</th>
+                  <th class="num" style="background:#dbeafe;">2022 ↑EDE</th>
+                  <th class="num">2023</th>
+                  <th class="num">2024</th>
+                  <th class="num">2025</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong><abbr title="gang stem — pandilla = gang, pandillero = gang member">pandill-</abbr></strong></td>
+                  <td class="num">9.6</td><td class="num">14.0</td><td class="num">12.5</td>
+                  <td class="num" style="background:#dbeafe; font-weight:700; color:var(--blue)">44.2</td>
+                  <td class="num">76.3</td><td class="num">51.9</td><td class="num">86.5</td>
+                </tr>
+                <tr>
+                  <td><abbr title="state of exception (excepción = emergency decree suspending rights)">excepci-</abbr></td>
+                  <td class="num">0.7</td><td class="num">3.7</td><td class="num">1.8</td>
+                  <td class="num" style="background:#dbeafe; font-weight:700; color:var(--blue)">24.7</td>
+                  <td class="num">29.8</td><td class="num">27.5</td><td class="num">16.2</td>
+                </tr>
+                <tr>
+                  <td><abbr title="security">seguridad</abbr></td>
+                  <td class="num">41.9</td><td class="num">38.1</td><td class="num">44.9</td>
+                  <td class="num" style="background:#dbeafe; font-weight:700; color:var(--blue)">57.0</td>
+                  <td class="num">66.9</td><td class="num">75.8</td><td class="num">48.5</td>
+                </tr>
+                <tr>
+                  <td style="font-weight:600;">bitcoin ⚡</td>
+                  <td class="num">0.0</td><td class="num">0.0</td>
+                  <td class="num" style="font-weight:700;">24.7</td>
+                  <td class="num" style="background:#dbeafe;">4.7</td>
+                  <td class="num">0.5</td><td class="num">0.5</td><td class="num">2.4</td>
+                </tr>
+                <tr style="background:#fef2f2">
+                  <td style="color:var(--red);"><abbr title="rights — derechos humanos = human rights">derechos</abbr></td>
+                  <td class="num">16.6</td><td class="num">14.5</td><td class="num">11.4</td>
+                  <td class="num" style="background:#dbeafe;">16.8</td>
+                  <td class="num">14.1</td><td class="num" style="color:var(--red)">10.0</td><td class="num" style="color:var(--red)">2.8</td>
+                </tr>
+                <tr>
+                  <td><abbr title="corruption">corrupci-</abbr></td>
+                  <td class="num">11.9</td><td class="num">3.9</td>
+                  <td class="num" style="font-weight:600;">16.9</td>
+                  <td class="num" style="background:#dbeafe;">14.5</td>
+                  <td class="num">24.7</td><td class="num">10.6</td><td class="num">14.6</td>
+                </tr>
+                <tr style="background:#fef2f2">
+                  <td style="color:var(--red);"><abbr title="democracy">democracia</abbr></td>
+                  <td class="num">2.0</td><td class="num">1.4</td><td class="num">2.9</td>
+                  <td class="num" style="background:#dbeafe;">1.4</td>
+                  <td class="num">2.0</td><td class="num">3.3</td><td class="num">1.2</td>
+                </tr>
+                <tr style="border-top:2px solid var(--border);">
+                  <td style="color:var(--light); font-size:.78rem;">N tweets</td>
+                  <td class="num" style="color:var(--light); font-size:.78rem;">13,707</td>
+                  <td class="num" style="color:var(--light); font-size:.78rem;">17,278</td>
+                  <td class="num" style="color:var(--light); font-size:.78rem;">13,767</td>
+                  <td class="num" style="background:#dbeafe; color:var(--light); font-size:.78rem;">16,250</td>
+                  <td class="num" style="color:var(--light); font-size:.78rem;">10,262</td>
+                  <td class="num" style="color:var(--light); font-size:.78rem;">7,572</td>
+                  <td class="num" style="color:var(--light); font-size:.78rem;">2,473</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note" style="margin-top:.5rem;">Rate per 1,000 tweets across all five government accounts. Blue column = Estado de Excepción declared. Red labels = accountability terms (derechos, democracia).</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ALL VISUALIZATIONS -->
+<section class="gray" id="analysis">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Interactive Visualizations</div>
+      <h2>Explore the full analysis</h2>
+      <p>All visualizations are built from the raw corpus data. Government and media vocabulary
+         is compared using log-odds ratios with Dirichlet smoothing (Monroe et al., 2008).
+         Event framing windows are ±30 days around each event.</p>
+    </div>
+
+    <!-- Embedded: Event Framing -->
+    <div class="viz-full">
+      <div class="viz-full-header">
+        <div>
+          <h3>Event Framing: Government vs. Media Word Clouds</h3>
+          <p>For each key event, which words appear far more in government tweets vs. independent media?
+             Compare the CECOT opening, the Bitcoin launch, the institutional capture of May 2021, and more.</p>
+        </div>
+        <a href="viz/event_framing_wordclouds.html" target="_blank">Full screen ↗</a>
+      </div>
+      <div class="viz-iframe-wrap tall">
+        <iframe src="viz/event_framing_wordclouds.html" loading="lazy" title="Event framing word clouds"></iframe>
+      </div>
+    </div>
+
+    <!-- Embedded: Tweets distinctive -->
+    <div class="viz-full">
+      <div class="viz-full-header">
+        <div>
+          <h3>What Makes Each Account Distinctive</h3>
+          <p>Log-odds ratio analysis: which words does each government account use far more than the others?
+             @FGR_SV's prosecution templates vs. @nayibbukele's global-positioning vocabulary vs. @AsambleaSV's procedural normalization.</p>
+        </div>
+        <a href="viz/tweets_distinctive.html" target="_blank">Full screen ↗</a>
+      </div>
+      <div class="viz-iframe-wrap">
+        <iframe src="viz/tweets_distinctive.html" loading="lazy" title="Distinctive words per account"></iframe>
+      </div>
+    </div>
+
+    <!-- Embedded: How Bukele attacks critics -->
+    <div class="viz-full">
+      <div class="viz-full-header">
+        <div>
+          <h3>How Bukele Tweets About International Critics</h3>
+          <p>Strategy and target heatmap. When does he delegitimize vs. deflect vs. mock?
+             Which critics (HROs, foreign governments, press) get which treatment?</p>
+        </div>
+        <a href="viz/bukele_critics_heatmap.html" target="_blank">Full screen ↗</a>
+      </div>
+      <div class="viz-iframe-wrap">
+        <iframe src="viz/bukele_critics_heatmap.html" loading="lazy" title="Bukele critics heatmap"></iframe>
+      </div>
+    </div>
+
+    <!-- Embedded: Word × Year Heatmap -->
+    <div class="viz-full">
+      <div class="viz-full-header">
+        <div>
+          <h3>Government Vocabulary Over Time</h3>
+          <p>Track how key political terms rise and fall across accounts and years. Bitcoin's 2021 spike, pandillas tripling after the Estado de Excepción, derechos quietly declining.</p>
+        </div>
+        <a href="viz/tweets_heatmap.html" target="_blank">Full screen ↗</a>
+      </div>
+      <div class="viz-iframe-wrap">
+        <iframe src="viz/tweets_heatmap.html" loading="lazy" title="Word frequency heatmap over time"></iframe>
+      </div>
+    </div>
+
+    <!-- Card grid for remaining viz -->
+    <div style="margin-top:2rem; margin-bottom:.75rem; padding:.75rem 1rem; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; font-size:.85rem; color:#0c4a6e;">
+      <strong>Note:</strong> All visualizations use the original Spanish text.
+      To translate labels and hover text to English, right-click any visualization and choose <strong>Translate to English</strong> (Chrome / Edge), or use your browser's built-in translation feature on the full-screen view.
+    </div>
+    <div class="viz-grid" style="margin-top:.5rem;">
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>What Makes Each Outlet Distinctive</h3>
+          <p>El Faro vs. La Página vs. El Mundo vs. Diario Colatino. Which words does each outlet use far more than the others?</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">Media · Log-odds</span>
+          <a class="viz-link" href="viz/media_distinctive.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Word × Year Heatmap (Press)</h3>
+          <p>How does news coverage of key terms shift over time across domestic and international outlets?</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">Media · Time</span>
+          <a class="viz-link" href="viz/press_heatmap.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Top Bigrams per Twitter Account</h3>
+          <p>Recurring two-word phrases reveal structural patterns: FGR prosecution templates, Bukele's international positioning, AsambleaSV procedural boilerplate.</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">N-grams · Tweets</span>
+          <a class="viz-link" href="viz/tweet_bigrams.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Top Bigrams per Media Outlet</h3>
+          <p>"Régimen de excepción," "derechos humanos," "centros penales" — the phrases that define critical coverage. Compare across outlets.</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">N-grams · Media</span>
+          <a class="viz-link" href="viz/media_bigrams.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Distinctive Bigrams by Source</h3>
+          <p>Log-odds analysis of the most uniquely identifying two-word phrases per account and outlet. What does each source say that no one else does?</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">N-grams</span>
+          <a class="viz-link" href="viz/distinctive_bigrams.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Bukele Critics: Volume Over Time</h3>
+          <p>When does Bukele ramp up attacks on international critics? Volume spikes track key political stress points: the May 2021 coup, EDE criticism, IMF pushback.</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">Tweets · Time</span>
+          <a class="viz-link" href="viz/bukele_volume.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Rhetorical Strategies by Target</h3>
+          <p>Delegitimize, deflect, mock, or threaten? Which strategies does Bukele deploy against HROs vs. foreign governments vs. international press?</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">Tweets</span>
+          <a class="viz-link" href="viz/bukele_strategies.html" target="_blank">View</a>
+        </div>
+      </div>
+      <div class="viz-card">
+        <div class="viz-card-body">
+          <h3>Event Framing: Butterfly Chart</h3>
+          <p>Head-to-head comparison of government vs. media vocabulary for each event window, displayed as a symmetric diverging chart.</p>
+        </div>
+        <div class="viz-card-footer">
+          <span class="viz-tag">Framing</span>
+          <a class="viz-link" href="viz/event_framing_butterfly.html" target="_blank">View</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KEY EVENTS TIMELINE -->
+<section class="white" id="events">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Timeline</div>
+      <h2>Key political events in this study</h2>
+      <p>The framing analysis centers on eight moments where government and media narratives
+         diverged most sharply. Red markers indicate democratic backsliding events.</p>
+    </div>
+    <div class="tl-grid">
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-date">June 2019</div>
+          <h4>Bukele inaugurated</h4>
+          <p>First president since the peace accords elected without ARENA or FMLN. Runs on anti-corruption, social media-first strategy. Wins 53% in the first round.</p>
+        </div>
+        <div class="timeline-item red">
+          <div class="timeline-date">February 2020</div>
+          <h4>Military enters the legislature</h4>
+          <p>Bukele surrounds the Asamblea with troops to pressure passage of a security loan. First major constitutional crisis; international condemnation.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2020–2021</div>
+          <h4>COVID-19 response</h4>
+          <p>Daily Twitter dashboards become a central communications tool. Emergency decrees concentrate executive power. Bukele's approval holds above 80%.</p>
+        </div>
+        <div class="timeline-item red">
+          <div class="timeline-date">May 2021</div>
+          <h4>Institutional takeover</h4>
+          <p>New legislative supermajority dismisses the Constitutional Court and Attorney General on Day 1. Both accounts shift messaging within weeks. IACHR condemns the move as a violation of constitutional norms.</p>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-date">September 2021</div>
+          <h4>Bitcoin becomes legal tender</h4>
+          <p>El Salvador is the first country to adopt Bitcoin nationally. Government frames it as a development breakthrough. The IMF and international investors express concern. "Bitcoin" spikes to 24.7/1k tweets — then nearly vanishes by 2023.</p>
+        </div>
+        <div class="timeline-item red">
+          <div class="timeline-date">March 2022 – present</div>
+          <h4>Estado de Excepción</h4>
+          <p>Constitutional rights suspended after a gang violence spike. 80,000+ arrests — the largest per-capita mass incarceration in the Western Hemisphere. Government: historic security success. Independent media and Amnesty: arbitrary detentions, deaths in custody, systematic torture.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2023</div>
+          <h4>CECOT opens</h4>
+          <p>The Terrorism Confinement Center (40,000 capacity) is launched with a government propaganda video set to driving music. Bukele tours international leaders through it. Human rights organizations document beatings and overcrowding.</p>
+        </div>
+        <div class="timeline-item red">
+          <div class="timeline-date">February 2024</div>
+          <h4>Bukele re-elected — 85%</h4>
+          <p>Wins by a historic margin. The Constitutional Court that permitted his candidacy for a second term was composed of his own 2021 appointees. International observers note unfair advantages despite calling the vote technically free.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA SECTION -->
+<section class="gray" id="data">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Dataset</div>
+      <h2>A multi-source Salvadoran political text corpus</h2>
+      <p>Assembled from six source streams: government Twitter, GDELT BigQuery, HuggingFace datasets,
+         direct outlet crawls, URL repair via the Wayback Machine, and internationally-filtered press.
+         Cleaned, deduplicated, and filtered for political relevance to El Salvador.</p>
+    </div>
+    <div class="two-col">
+      <div class="data-block">
+        <h3>Government Twitter accounts</h3>
+        <table class="source-table">
+          <tr><th>Account</th><th>Role</th><th>Tweets</th></tr>
+          <tr><td>@AsambleaSV</td><td>Legislature</td><td>54,466</td></tr>
+          <tr><td>@FGR_SV</td><td>Public prosecutor</td><td>36,519</td></tr>
+          <tr><td>@Gobierno_SV</td><td>Executive comms</td><td>33,370</td></tr>
+          <tr><td>@PresidenciaSV</td><td>Executive comms</td><td>30,438</td></tr>
+          <tr><td>@nayibbukele</td><td>President personal</td><td>6,995</td></tr>
+        </table>
+        <p style="margin-top:.75rem; font-size:.78rem; color:var(--light)">
+          Collected via Twitter/X API v2 full-archive search. Budget constrained to $30 total;
+          full timeline pagination per account. Corpus spans 2015–2026.
+        </p>
+      </div>
+      <div class="data-block">
+        <h3>News article corpus (139,637 articles)</h3>
+        <table class="source-table">
+          <tr><th>Source stream</th><th>Articles</th></tr>
+          <tr><td>HuggingFace (El Mundo, EDH)</td><td>85,912</td></tr>
+          <tr><td>International press (Reuters, DW, Guardian…)</td><td>30,849</td></tr>
+          <tr><td>Original scrape (sitemaps + GDELT)</td><td>8,815</td></tr>
+          <tr><td>Repaired URLs (redirects + Wayback)</td><td>8,157</td></tr>
+          <tr><td>New outlets (Factum, Foco STV…)</td><td>5,904</td></tr>
+        </table>
+      </div>
+      <div class="data-block">
+        <h3>Collection methodology</h3>
+        <ul>
+          <li>Twitter/X API v2 full-archive search with pagination</li>
+          <li>GDELT BigQuery export — 1.86M event rows filtered to relevant Salvadoran URLs</li>
+          <li>HuggingFace datasets (justinian336/salvadoran-news-*)</li>
+          <li>Direct sitemap and archive crawls for outlet-level collection</li>
+          <li>URL repair: 11,572 broken links recovered via HTTP 301 redirect-following and Wayback Machine CDX API</li>
+          <li>International content filter: requires 3+ mentions of "El Salvador" or 2+ "Bukele" with key terms</li>
+        </ul>
+      </div>
+      <div class="data-block">
+        <h3>Limitations</h3>
+        <ul>
+          <li>Twitter API budget capped at $30 — @nayibbukele coverage is truncated relative to full history</li>
+          <li>La Prensa Gráfica is partially paywalled</li>
+          <li>Gatoencerrado.news blocked by Cloudflare</li>
+          <li>Corpus captures text production, not consumption — no audience data</li>
+          <li>Cosine similarity measures lexical overlap, not semantic content</li>
+          <li>Before/after comparison is not a clean natural experiment</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="white" id="about">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Methods</div>
+      <h2>How the analysis works</h2>
+    </div>
+    <div class="two-col">
+      <div class="data-block">
+        <h3>Text analysis methods</h3>
+        <ul>
+          <li><strong>Log-odds ratio</strong> with 0.5 Dirichlet smoothing — identifies vocabulary that is distinctively more common in one source than all others (Monroe, Colaresi, and Quinn, 2008)</li>
+          <li><strong>Cosine similarity</strong> over unigram TF vectors — measures overall vocabulary overlap between two accounts or documents</li>
+          <li><strong>Event framing windows</strong> — ±30 days around key events; TF-IDF weighted word clouds; separate vectors for government tweets and media articles</li>
+          <li><strong>Bigram analysis</strong> — adjacent non-stop token pairs reveal phrase-level patterns (FGR prosecution templates, Bukele's international positioning)</li>
+          <li><strong>Temporal heatmaps</strong> — word × year normalized frequency, showing how vocabulary priorities shift over time</li>
+        </ul>
+        <p style="margin-top:.75rem; font-size:.85rem; color:var(--mid)">
+          Built with Python, Plotly, WordCloud, and pandas. All visualizations are self-contained
+          interactive HTML. Spanish tokenization strips URLs, @mentions, hashtags, and
+          applies a 3-character minimum token length with a comprehensive stop-word list.
+        </p>
+      </div>
+      <div class="data-block">
+        <h3>Theoretical framework</h3>
+        <p style="font-size:.88rem; color:var(--mid); margin-bottom:.75rem;">
+          This project tests predictions from Guriev and Treisman's (2022) theory of "spin
+          dictatorship": the idea that contemporary autocrats govern primarily through narrative
+          control rather than violence. Spin dictators are predicted to show coordinated messaging
+          across institutions, positive agenda-setting that avoids accountability language, and
+          social media attacks on international critics rather than physical repression.
+        </p>
+        <p style="font-size:.88rem; color:var(--mid); margin-bottom:1.5rem;">
+          All three predictions find support in the Salvadoran corpus.
+        </p>
+        <h3>Access the paper</h3>
+        <div style="display:flex; flex-direction:column; gap:.6rem; margin-top:.75rem;">
+          <a class="btn btn-primary" href="paper/governing_through_narrative.docx" style="text-align:center">Download paper (.docx)</a>
+        </div>
+        <p style="margin-top:1rem; font-size:.78rem; color:var(--light)">
+          Course project for Text as Data, Spring 2026.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    El Salvador Political Text Analysis &middot; Text as Data, Spring 2026 &middot;
+    Data from Twitter/X API, GDELT, HuggingFace, and public Salvadoran news archives
+  </p>
+</footer>
+
+</body>
+</html>

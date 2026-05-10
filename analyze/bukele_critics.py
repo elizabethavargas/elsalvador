@@ -25,6 +25,8 @@ import json
 import os
 import re
 import csv
+import sys
+csv.field_size_limit(sys.maxsize)
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
@@ -226,6 +228,7 @@ def load_and_tag():
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df[df["date"].notna()].copy()
+    df = df[df["date"] <= "2025-12-31"].copy()
     df["ym"] = df["date"].dt.to_period("M").dt.to_timestamp()
     df["year"] = df["date"].dt.year
     print(f"[load] {len(df):,} / {total_bukele:,} Bukele tweets match target/strategy patterns")

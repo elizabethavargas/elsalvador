@@ -1,0 +1,29 @@
+{
+  "hosting": {
+    "site": "project-94921f76-0645-4390-841",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "deploy.sh",
+      "**/.*"
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+          { "key": "Cache-Control", "value": "public, max-age=3600" }
+        ]
+      },
+      {
+        "source": "viz/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400" }
+        ]
+      }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+  }
+}

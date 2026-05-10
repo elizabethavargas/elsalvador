@@ -13,6 +13,8 @@ OUTPUTS (output/event_framing/):
 
 import base64
 import csv
+import sys
+csv.field_size_limit(sys.maxsize)
 import io
 import math
 import os
@@ -26,7 +28,7 @@ from wordcloud import WordCloud
 
 REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TWEETS_CSV = os.path.join(REPO_ROOT, "output", "data", "tweets.csv")
-MEDIA_CSV  = os.path.join(REPO_ROOT, "output", "articles_text_clean.csv")
+MEDIA_CSV  = os.path.join(REPO_ROOT, "output", "articles_master.csv")
 OUTPUT_DIR = os.path.join(REPO_ROOT, "output", "event_framing")
 
 # Government accounts used as "official narrative" side
@@ -39,12 +41,12 @@ MEDIA_DOMAINS = {
 }
 
 KEY_EVENTS = [
-    ("Inauguración de Bukele",         "2019-06-01"),
-    ("Militares en Asamblea",          "2020-02-09"),
-    ("Emergencia COVID",               "2020-03-21"),
-    ("Elecciones (Nuevas Ideas gana)", "2021-02-28"),
-    ("CECOT inaugurado",               "2023-11-01"),
-    ("Segundo mandato Bukele",         "2024-06-01"),
+    ("Bukele Inauguration",            "2019-06-01"),
+    ("Military Surrounds Legislature", "2020-02-09"),
+    ("COVID Emergency Decree",         "2020-03-21"),
+    ("Elections: Nuevas Ideas Wins",   "2021-02-28"),
+    ("CECOT Mega-Prison Opens",        "2023-11-01"),
+    ("Bukele Second Term Begins",      "2024-06-01"),
 ]
 WINDOW_DAYS = 30
 MIN_TWEETS   = 100
@@ -77,6 +79,10 @@ STOP = {
     "periodico","periódico","digital","online","web","sitio",
     # ── Scraping split-word / section-name artifacts ──────────────────────
     "gina","smoda","moda","talento",
+    # ── HTML / CSS class artifacts from CMS scraping ──────────────────────
+    "align","aligncenter","alignleft","alignright","alignnone",
+    "wp","caption","size","full","large","medium","thumbnail","attachment",
+    "class","style","width","height","src","alt","href","rel","type","data",
     # ── Scraping / navigation / 404 artifacts ─────────────────────────────
     "not","found","error","page","section","loading","enabled","browser",
     "existe","encontramos","buscas","regresando","encontrar","encontrado",
@@ -89,15 +95,191 @@ STOP = {
     "compartir","facebook","instagram","youtube","whatsapp","telegram",
     "javascript","archivo","enlace","acceso","buscar","search","click",
     "ver","leer","nota","artículo","articulo","imagen","foto","video",
+    # ── Social-media / CMS UI artifacts ──────────────────────────────────────
+    "comentarios","comentario","desactivados","desactivado","vistas","vista",
+    "compartidos","compartido","reacciones","reaccion","reacción",
+    "publicado","publicar","editar","eliminar","reportar","guardar","seguir",
+    # ── Days of week (date metadata leaking into article text) ────────────────
+    "lunes","martes","miércoles","miercoles","jueves","viernes",
+    "sábado","sabado","domingo",
+    # ── Standalone geography prefixes (noise without their second word) ───────
+    "san","santa","nueva",
+    # ── Outlet self-references ────────────────────────────────────────────────
+    "diariocolatino","lapagina","elfaro","elmundo","presidencia","faro",
+    # ── Drop-cap residue ──────────────────────────────────────────────────────
+    "ste","nte","uego","uatro","iembros","iputados","olona","urante","oen","ctón",
+    # ── Encoding garble artifacts ─────────────────────────────────────────────
+    "repã","blica","redacciã","oacute","aacute","eacute","iacute","uacute",
+    "yeerles","intimissimun","administraador",
+    # ── Navigation / section labels ───────────────────────────────────────────
+    "columna","columnas","portada","articulos","tags","tag","psd","lnf",
+    # ── Common abbreviations that become noise tokens ─────────────────────────
+    "sra","mlls","dep","pes","cbc","fsv","emp",
 }
 
+
+
+# ─────────────────────────────────────────────
+# ENGLISH TOKEN FILTER
+# ─────────────────────────────────────────────
+ENGLISH = {
+    "the","and","for","are","but","not","you","all","can","her","was","one",
+    "our","out","had","him","his","how","man","new","now","old","see","two",
+    "who","did","its","let","put","say","she","too","use","from","have",
+    "that","this","they","will","with","been","than","then","when","some",
+    "what","know","come","said","each","time","your","their","there","would",
+    "other","about","which","could","these","those","more","also","into",
+    "over","just","even","made","after","before","under","first","where",
+    "while","should","through","between","because","without","within",
+    "against","however","whether","another","during","monday","tuesday",
+    "wednesday","thursday","friday","saturday","sunday","subscribe",
+    "newsletter","read","here","click","follow","share","like","views",
+    "loading","section","browser","menu","search","back","next","national",
+    "international","news","people","year","years","state","city","country",
+    "president","government","police","security","january","february",
+    "march","april","june","july","august","september","october","november",
+    "december","watch","join","get","make","take","give","find","think",
+    "look","want","need","help","work","way","good","great","well","much",
+    "many","show","tell","play","move","live","feel","try","ask","seem",
+    "lead","keep","walk","draw","believe","hold","bring","happen","carry",
+    "talk","appear","produce","sit","stand","lose","pay","meet","include",
+    "continue","set","learn","change","turn","close","start","stop","end",
+    "open","send","receive","run","build","create","write","call","day",
+    "week","month","days","weeks","months","hour","hours","went","still",
+    "own","right","left","few","most","least","less","high","low","large",
+    "small","big","little","full","free","real","true","false","early",
+    "late","near","far","hard","easy","fast","slow","report","reports",
+    "according","press","release","official","statement","including",
+    "despite","although","therefore","moreover","wrote","told","added",
+    "noted","reported","whose","whom","may","might","must","shall","does",
+    "were","said","have","has","had","will","can","could","would","should",
+    # Finance / Bitcoin
+    "bank","banks","banking","million","billion","trillion","bonds","bond",
+    "debt","loan","loans","fund","funds","money","tax","taxes","budget",
+    "economy","economic","finance","financial","invest","investment","market",
+    "bitcoin","crypto","wallet","token","coin","exchange","dollar","dollars",
+    # Common English words missed in first pass
+    "only","them","being","every","public","future","society","speech",
+    "god","countries","world","today","never","always","again","really",
+    "gone","came","won","done","thought","together","nation","peace",
+    "hope","freedom","justice","love","power","force","law","laws",
+    "proud","pride","game","history","promise","vote","leader","leadership",
+    "strong","strength","success","plan","plans","rights","court","courts",
+    "news","media","video","live","watch","show","shows","post","posts",
+    "tweet","tweets","account","accounts","user","users","profile","link",
+    "join","sign","email","address","message","messages","reply","replies",
+    "dear","thanks","thank","sorry","please","welcome","hello",
+    "yes","yeah","nope","okay","wow","amazing","awesome","incredible",
+    "wonderful","beautiful","perfect","important","serious","critical",
+    "official","private","global","local","political","military","army",
+    "president","minister","congress","senate","party","election","votes",
+    "voter","voters","democratic","constitution","legal","illegal","crime",
+    "crimes","criminal","criminals","prison","jail","arrest","arrested",
+    "detained","detention","trial","human","truth","fact","facts","evidence",
+    "proof","statistics","numbers","percent","number","children","women",
+    "family","families","person","citizen","citizens","community","communities",
+    "globe","earth","land","city","cities","state","states","region","regions",
+    "area","areas","place","places",
+    # Sports/culture English
+    "longboard","longboards","freestyle","gang","gangs","united","heat",
+    "surf","surfing","skate","skateboard","skating","bmx","crossfit",
+    "startup","startups","app","apps","software","hardware",
+    "platform","platforms","cloud","server","servers",
+    # elfaro.net English articles (press freedom, spyware coverage)
+    "support","journalists","journalist","salvadoran","salvadorans","american",
+    "americans","group","groups","spyware","apple","crook","round","protected",
+    "freedom","press","expression","civil","organizations","org",
+    "nso","pegasus","surveillance","hacking","hack","hacked",
+    "targets","targeted","targeting","expose","exposed","exposing",
+    "investigation","investigations","investigate","investigated","investigative",
+    "report","reporting","reporter","reporters","coverage","cover","covered",
+    "threat","threats","threatened","threatening","opposition","dissident",
+    "dissidents","exile","exiled","abroad","overseas","foreign","foreigner",
+    # Remaining stragglers
+    "english","interview","interviews","approval","subtitles","going","safest",
+    "safe","getting","something","anything","everything","nothing",
+    "someone","anyone","everyone","nobody","everybody","somewhere","anywhere",
+    "everywhere","somehow","anyway","already","almost","actually",
+    "basically","literally","honestly","clearly","exactly","absolutely",
+    "definitely","certainly","probably","possibly","obviously","simply",
+    "totally","entirely","completely","seriously","especially","generally",
+    "finally","recently","currently","previously","suddenly","immediately",
+    "quickly","slowly","carefully","easily","perhaps","maybe","sometimes",
+    "often","usually","soon","later","unless","nevertheless","meanwhile",
+    "afterward","otherwise","instead",
+}
+
+# ─────────────────────────────────────────────
+# MULTI-WORD EXPRESSION COLLOCATIONS
+# (joined with _ before tokenizing so compound names stay together)
+# ─────────────────────────────────────────────
+COLLOCATION_SUBS = [
+    # Geography
+    (re.compile(r'san\s+salvador'),                        'san_salvador'),
+    (re.compile(r'santa\s+ana'),                           'santa_ana'),
+    (re.compile(r'san\s+miguel'),                          'san_miguel'),
+    (re.compile(r'santa\s+tecla'),                         'santa_tecla'),
+    (re.compile(r'san\s+marcos'),                          'san_marcos'),
+    (re.compile(r'san\s+pedro'),                           'san_pedro'),
+    (re.compile(r'santa\s+rosa'),                          'santa_rosa'),
+    (re.compile(r'san\s+vicente'),                         'san_vicente'),
+    (re.compile(r'la\s+libertad'),                         'la_libertad'),
+    (re.compile(r'la\s+unión|la\s+union'),          'la_union'),
+    (re.compile(r'la\s+paz'),                              'la_paz'),
+    # Political entities
+    (re.compile(r'nuevas\s+ideas'),                        'nuevas_ideas'),
+    (re.compile(r'nayib\s+bukele'),                        'nayib_bukele'),
+    # Estado de Excepción in various forms
+    (re.compile(r'estado\s+de\s+excepción'),        'estado_excepcion'),
+    (re.compile(r'estado\s+de\s+excepcion'),              'estado_excepcion'),
+    (re.compile(r'régimen\s+de\s+excepción'), 'regimen_excepcion'),
+    (re.compile(r'regimen\s+de\s+excepcion'),             'regimen_excepcion'),
+    (re.compile(r'estado\s+excepción'),               'estado_excepcion'),
+    (re.compile(r'estado\s+excepcion'),                    'estado_excepcion'),
+    # Institutions & key phrases
+    (re.compile(r'derechos\s+humanos'),                    'derechos_humanos'),
+    (re.compile(r'asamblea\s+legislativa'),                'asamblea_legislativa'),
+    (re.compile(r'corte\s+suprema'),                       'corte_suprema'),
+    (re.compile(r'sala\s+constitucional'),                 'sala_constitucional'),
+    (re.compile(r'fiscalía\s+general|fiscalia\s+general'), 'fiscalia_general'),
+    (re.compile(r'naciones\s+unidas'),                     'naciones_unidas'),
+    (re.compile(r'estados\s+unidos'),                      'estados_unidos'),
+    (re.compile(r'bitcoin\s+city'),                        'bitcoin_city'),
+    (re.compile(r'centros\s+penales'),                     'centros_penales'),
+    (re.compile(r'centro\s+penal'),                        'centro_penal'),
+    (re.compile(r'fuerza\s+armada'),                       'fuerza_armada'),
+    (re.compile(r'seguridad\s+pública|seguridad\s+publica'), 'seguridad_publica'),
+    (re.compile(r'libertad\s+de\s+expresión|libertad\s+de\s+expresion'), 'libertad_expresion'),
+]
+
+
+def join_collocations(text):
+    """Join known multi-word political expressions into underscore-linked tokens."""
+    t = text.lower()
+    for pat, repl in COLLOCATION_SUBS:
+        t = pat.sub(repl, t)
+    return t
+
+
+def is_mostly_english(text, threshold=0.40):
+    """Return True if >threshold fraction of alpha tokens are common English words."""
+    tokens = re.findall(r'[a-z]{3,}', text.lower())
+    if len(tokens) < 15:
+        return False
+    return sum(1 for t in tokens if t in ENGLISH) / len(tokens) > threshold
 
 def tokenize(text):
     text = re.sub(r"https?://\S+", " ", text)
     text = re.sub(r"@\w+", " ", text)
     text = re.sub(r"#\w+", " ", text)
-    tokens = re.findall(r"\b[a-záéíóúüñ]{3,}\b", text.lower())
-    return [t for t in tokens if t not in STOP]
+    text = join_collocations(text)
+    # Match underscore-joined collocations OR plain Spanish words (3+ chars)
+    tokens = re.findall(
+        r"[a-z\u00e0-\u00ff][a-z\u00e0-\u00ff]*(?:_[a-z\u00e0-\u00ff][a-z\u00e0-\u00ff]*)+"
+        r"|[a-z\u00e0-\u00ff]{3,}",
+        text.lower()
+    )
+    return [t for t in tokens if t not in STOP and t not in ENGLISH]
 
 
 def log_odds(c_a, total_a, c_b, total_b):
@@ -111,6 +293,17 @@ def log_odds(c_a, total_a, c_b, total_b):
 # ─────────────────────────────────────────────
 # LOAD DATA
 # ─────────────────────────────────────────────
+def clean_text(text):
+    """Strip HTML tags and CSS artifacts; fix drop-cap scraping artifacts."""
+    text = text.replace('\xa0', ' ').replace('​', '')
+    text = re.sub(r'<[^>]{0,300}>', ' ', text)
+    # Fix drop-cap artifact: "L uego" → "Luego", "M iembros" → "Miembros"
+    text = re.sub(r'(?<!\w)([A-ZÁÉÍÓÚÑÜ])\s+([a-záéíóúñ]{2,})', r'\1\2', text)
+    text = re.sub(r'\balign(?:center|left|right|none)?\b', ' ', text)
+    text = re.sub(r'\bwp-[a-z0-9_-]+', ' ', text)
+    return text
+
+
 def load_tweets():
     """Returns list of (date_obj, tokens) for government accounts."""
     print("[load] tweets ...")
@@ -123,7 +316,14 @@ def load_tweets():
                 d = date.fromisoformat(r["date"][:10])
             except Exception:
                 continue
-            rows.append((d, tokenize(r.get("text", ""))))
+            text = clean_text(r.get("text", ""))
+            # Skip mostly-English tweets (short tweet check uses lower threshold)
+            raw_alpha = re.findall(r'[a-z]{3,}', text.lower())
+            if len(raw_alpha) >= 4:
+                eng_frac = sum(1 for t in raw_alpha if t in ENGLISH) / len(raw_alpha)
+                if eng_frac > 0.40:
+                    continue
+            rows.append((d, tokenize(text)))
     print(f"  {len(rows):,} government tweets loaded")
     return rows
 
@@ -137,7 +337,9 @@ def load_articles():
             if r.get("domain", "") not in MEDIA_DOMAINS:
                 continue
             ym = r.get("year", "") + "-" + r.get("month", "").zfill(2)
-            text = r.get("title", "") + " " + r.get("text", "")[:800]
+            text = clean_text(r.get("title", "") + " " + r.get("text", "")[:800])
+            if is_mostly_english(text):
+                continue
             rows.append((ym, tokenize(text)))
     print(f"  {len(rows):,} media articles loaded")
     return rows
@@ -229,8 +431,8 @@ def viz_wordclouds(tweet_rows, article_rows):
         print(f"  {label}: {n_t:,} tweet tokens, {n_a:,} article tokens")
 
         # filter to words with at least MIN_FREQ occurrences on their dominant side
-        t_freq = {w: c for w, c in t_count.items() if c >= MIN_FREQ}
-        a_freq = {w: c for w, c in a_count.items() if c >= MIN_FREQ}
+        t_freq = {w.replace("_", " "): c for w, c in t_count.items() if c >= MIN_FREQ}
+        a_freq = {w.replace("_", " "): c for w, c in a_count.items() if c >= MIN_FREQ}
 
         govt_png  = make_cloud_png(t_freq, "Reds")
         media_png = make_cloud_png(a_freq, "Blues")
