@@ -389,7 +389,7 @@ heading2(doc, "3.2 News Article Corpus")
 
 body_para(doc,
     "The news article corpus comprises 139,637 articles drawn from six source streams: "
-    "(1) HuggingFace Salvadoran news datasets (Justinian336, 2023), contributing 85,912 articles "
+    "(1) HuggingFace Salvadoran news datasets (Martinez, 2023), contributing 85,912 articles "
     "primarily from El Mundo (diario.elmundo.sv) and El Diario de Hoy (elsalvador.com); "
     "(2) direct scrapes of additional outlets including Revista Factum, Foco STV, and the "
     "GDELT-linked Salvadoran press (17,629 articles); (3) the original article collection via "
@@ -759,9 +759,18 @@ body_para(doc,
     "overlap rather than semantic content. Two accounts might use identical words with different "
     "tone or implication. Embedding-based similarity measures would strengthen this analysis. "
     "Second, the before/after comparison for institutional convergence is not a clean natural "
-    "experiment: the leadership change coincided with a new legislative supermajority, broader "
-    "political context shifts, and the post-COVID transition. Attributing convergence specifically "
-    "to institutional capture requires caution. Third, we do not model audience reception. "
+    "experiment. Three changes occurred simultaneously on May 1, 2021: (a) new personnel loyal to "
+    "Bukele replaced the leadership of @AsambleaSV and @FGR_SV; (b) a new Nuevas Ideas "
+    "supermajority took over the legislature, shifting the institution's political agenda regardless "
+    "of any coordination directive; and (c) the post-pandemic political environment and the "
+    "impending Bitcoin rollout altered the broader communications landscape for all accounts. The "
+    "design cannot fully disentangle personnel replacement from these concurrent shifts. One "
+    "partial check is available: @Gobierno_SV and @PresidenciaSV were already under executive "
+    "control before May 2021, yet they also converged toward @nayibbukele post-capture (+29% and "
+    "+52%, respectively), suggesting the shift was not purely an artifact of leadership replacement "
+    "in the directly captured institutions. Nevertheless, the finding should be interpreted as "
+    "consistent with the capture hypothesis rather than a causal identification of it. Third, "
+    "we do not model audience reception. "
     "Government messaging and independent media may reach different audiences, in which case the "
     "framing divergence we document may not translate into measurable attitudinal differences "
     "among citizens."
@@ -841,8 +850,8 @@ references = [
      "(Press Release 110/21). https://www.oas.org/en/iachr/media_center/preleases/2021/110.asp"),
     ("International Monetary Fund. (2021). El Salvador: 2021 Article IV consultation. "
      "IMF Country Report No. 21/237."),
-    ("Justinian336. (2023). Salvadoran news datasets [Data set]. HuggingFace. "
-     "https://huggingface.co/justinian336"),
+    ("Martinez, J. (2023). salvadoran-news [Data set]. HuggingFace. "
+     "https://huggingface.co/datasets/justinian336/salvadoran-news"),
     ("Levitsky, S., and Way, L. A. (2010). Competitive authoritarianism: Hybrid regimes after the "
      "cold war. Cambridge University Press."),
     ("Monroe, B. L., Colaresi, M. P., and Quinn, K. M. (2008). Fightin’ words: Lexical feature "
