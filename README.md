@@ -16,31 +16,31 @@ This project analyzes ten years of Spanish-language political communication in E
 
 ## Replication Package
 
-### Prerequisites
-
-- Python 3.10+
-- Install all dependencies:
+### Quickstart
 
 ```bash
+# 1. Clone the repo
+git clone https://github.com/elizabethavargas/elsalvador.git
+cd elsalvador
+
+# 2. Install dependencies
 pip install -r requirements.txt
-```
 
-### Data
-
-Data files are too large for GitHub (~660 MB total) and are hosted on Google Cloud Storage. Download them with:
-
-```bash
+# 3. Download the corpus data (~660 MB) from Google Cloud Storage
 python download_data.py
+
+# 4. Run any analysis script (see full list below)
+python analyze/word_prevalence.py
 ```
 
-This populates `output/` and `output/data/` with the four files expected by the analysis scripts:
+`download_data.py` fetches the four corpus files from Google Cloud Storage and saves them to the paths expected by all analysis scripts:
 
-| File | Description |
-|------|-------------|
-| `output/articles_master.csv` | ~140k+ news articles from 6 Salvadoran outlets (2015–2025) |
-| `output/articles_text_clean.csv` | Cleaned article text used in analysis |
-| `output/el_salvador_political_dataset.csv` | Government press releases and transcripts (Presidencia, Asamblea) |
-| `output/data/tweets.csv` | ~162k government tweets from 5 official accounts (2015–2025) |
+| Saved to | Description | Size |
+|----------|-------------|------|
+| `output/articles_master.csv` | ~140k+ news articles from 6 Salvadoran outlets (2015–2025) | 466 MB |
+| `output/articles_text_clean.csv` | Cleaned article text used in analysis | 130 MB |
+| `output/el_salvador_political_dataset.csv` | Government press releases (Presidencia, Asamblea) | 20 MB |
+| `output/data/tweets.csv` | ~162k government tweets from 5 official accounts (2015–2025) | 44 MB |
 
 To re-collect tweets from scratch, run `collect/twitter_collector.py`. It uses [twitterapi.io](https://twitterapi.io). Set your API key in a `.env` file:
 
