@@ -2,7 +2,7 @@
 
 **Live website:** [https://el-salvador-news.netlify.app/](https://el-salvador-news.netlify.app/)
 
-**Report:** [paper/governing_through_narrative.docx](paper/governing_through_narrative.docx)
+**Report:** [paper/governing_through_narrative.pdf](paper/governing_through_narrative.pdf)
 
 **GitHub repository:** [https://github.com/elizabethavargas/elsalvador](https://github.com/elizabethavargas/elsalvador)
 
