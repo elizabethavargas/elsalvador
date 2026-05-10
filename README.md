@@ -58,7 +58,7 @@ TWITTERAPI_IO_KEY=your_key_here
 | `collect/gdelt.py` | Collects article URLs from GDELT API using political search terms | `output/gdelt_urls.csv` |
 | `collect/scrape_articles.py` | Fetches full article text from URL lists | `output/articles_text.csv` |
 | `collect/scrape_new_outlets.py` | Scrapes additional Salvadoran news outlets | `output/new_outlets_articles.csv` |
-| `collect/twitter_collector.py` | Collects tweets from 5 official government accounts via X API | (requires API key) |
+| `collect/twitter_collector.py` | Collects tweets from 5 official government accounts via twitterapi.io | (requires API key) |
 
 ### Step 2 — Run analyses
 
@@ -158,7 +158,7 @@ python paper/build_paper.py
 
 | Source | Type | Count | Years |
 |--------|------|-------|-------|
-| @nayibbukele, @PresidenciaSV, @AsambleaSV, @MH_SV, @PolicíaSV | Government tweets | ~162,000 | 2015–2025 |
+| @nayibbukele, @PresidenciaSV, @AsambleaSV, @Gobierno_SV, @FGR_SV | Government tweets | ~162,000 | 2015–2025 |
 | elfaro.net, elsalvador.com, laprensagrafica.com, diariocolatino.com, lapagina.com.sv, gatoencerrado.net | News articles | ~140,000+ | 2015–2025 |
 
 All text is in Spanish. Analyses use log-odds ratio (Monroe, Colaresi & Quinn 2008) with Dirichlet prior smoothing, normalized per 1,000 tokens to control for format-driven length differences between tweets and articles.

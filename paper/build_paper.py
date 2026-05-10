@@ -367,7 +367,7 @@ heading2(doc, "3.1 Government Twitter Corpus")
 
 body_para(doc,
     "The primary data on government communications consist of 161,788 tweets collected from five "
-    "official Salvadoran government accounts via the Twitter/X API v2 full-archive search endpoint: "
+    "official Salvadoran government accounts via the twitterapi.io full-archive search API: "
     "@AsambleaSV (54,466 tweets; the Asamblea Legislativa), @FGR_SV (36,519; the Fiscalía "
     "General de la República), @Gobierno_SV (33,370; Gobierno de El Salvador), @PresidenciaSV "
     "(30,438; Casa Presidencial), and @nayibbukele (6,995; Nayib Bukele’s personal account). "
@@ -473,10 +473,10 @@ heading2(doc, "4.4 Event Framing Windows")
 
 body_para(doc,
     "To compare government and media framing of key events, we construct text windows of plus or "
-    "minus 30 days around eight politically significant dates. Within each window, we build "
+    "minus 30 days around six politically significant dates. Within each window, we build "
     "separate term-frequency vectors for government tweets and media articles, weight by TF-IDF, "
     "and visualize the most distinctive terms using word clouds. Events examined include Bukele’s "
-    "inauguration (June 2019), the military incursion into the legislature (February 2020), the "
+    "inauguration (June 2019), the COVID Emergency declaration (March 2020), the "
     "May 2021 institutional takeover, the Bitcoin legal tender law (September 2021), the "
     "declaration of the Estado de Excepción (March 2022), and the opening of CECOT (2023)."
 )
