@@ -16,10 +16,10 @@ import requests
 # Make each file public (Storage > select file > Permissions > Add principal:
 # allUsers, role: Storage Object Viewer), then copy the public URL.
 DATA_FILES = {
-    "output/articles_master.csv":           "PASTE_GCS_URL_HERE",
-    "output/articles_text_clean.csv":       "PASTE_GCS_URL_HERE",
-    "output/el_salvador_political_dataset.csv": "PASTE_GCS_URL_HERE",
-    "output/data/tweets.csv":               "PASTE_GCS_URL_HERE",
+    "output/articles_master.csv":           "https://storage.googleapis.com/el-salvador-data/articles_master.csv",
+    "output/articles_text_clean.csv":       "https://storage.googleapis.com/el-salvador-data/articles_text_clean.csv",
+    "output/el_salvador_political_dataset.csv": "https://storage.googleapis.com/el-salvador-data/el_salvador_political_dataset.csv",
+    "output/data/tweets.csv":               "https://storage.googleapis.com/el-salvador-data/tweets.csv",
 }
 # ─────────────────────────────────────────────────────────────────────────────
 
