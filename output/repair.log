@@ -1,0 +1,70 @@
+Loading /Users/elizabethgreer/Downloads/elsalvador/output/articles_text.csv ...
+  Total rows:  56,657
+  Broken rows: 28,282
+  Already repaired: 1,215
+  To repair: 27,067
+
+  To attempt: 27,067 URLs
+  Strategy: redirect → Wayback Machine fallback for failures
+
+Re-fetching via redirects (10 workers)...
+  500/27067  repaired=0  failed=500  28.6/s  ETA 15min
+  1000/27067  repaired=0  failed=1,000  32.6/s  ETA 13min
+  1500/27067  repaired=0  failed=1,500  33.5/s  ETA 13min
+  2000/27067  repaired=27  failed=1,973  30.2/s  ETA 14min
+  2500/27067  repaired=186  failed=2,314  14.4/s  ETA 29min
+  3000/27067  repaired=383  failed=2,617  10.8/s  ETA 37min
+  3500/27067  repaired=555  failed=2,945  9.5/s  ETA 41min
+  4000/27067  repaired=715  failed=3,285  8.2/s  ETA 47min
+  4500/27067  repaired=1,215  failed=3,285  6.1/s  ETA 61min
+  5000/27067  repaired=1,715  failed=3,285  5.1/s  ETA 73min
+  5500/27067  repaired=2,215  failed=3,285  4.6/s  ETA 79min
+  6000/27067  repaired=2,715  failed=3,285  4.4/s  ETA 80min
+  6500/27067  repaired=3,214  failed=3,286  4.3/s  ETA 80min
+  7000/27067  repaired=3,643  failed=3,357  3.8/s  ETA 87min
+  7500/27067  repaired=3,801  failed=3,699  3.7/s  ETA 88min
+  8000/27067  repaired=3,930  failed=4,070  3.7/s  ETA 85min
+  8500/27067  repaired=4,077  failed=4,423  3.8/s  ETA 81min
+  9000/27067  repaired=4,269  failed=4,731  3.9/s  ETA 77min
+  9500/27067  repaired=4,695  failed=4,805  3.7/s  ETA 80min
+  10000/27067  repaired=4,846  failed=5,154  3.7/s  ETA 77min
+  10500/27067  repaired=4,991  failed=5,509  3.8/s  ETA 73min
+  11000/27067  repaired=5,122  failed=5,878  3.8/s  ETA 70min
+  11500/27067  repaired=5,423  failed=6,077  3.8/s  ETA 68min
+  12000/27067  repaired=5,610  failed=6,390  3.8/s  ETA 66min
+  12500/27067  repaired=5,720  failed=6,780  3.8/s  ETA 63min
+  13000/27067  repaired=5,818  failed=7,182  3.9/s  ETA 60min
+  13500/27067  repaired=6,061  failed=7,439  3.8/s  ETA 59min
+  14000/27067  repaired=6,379  failed=7,621  3.8/s  ETA 57min
+  14500/27067  repaired=6,567  failed=7,933  3.9/s  ETA 54min
+  15000/27067  repaired=6,895  failed=8,105  3.8/s  ETA 52min
+  15500/27067  repaired=7,073  failed=8,427  3.8/s  ETA 50min
+  16000/27067  repaired=7,171  failed=8,829  3.9/s  ETA 47min
+  16500/27067  repaired=7,451  failed=9,049  3.9/s  ETA 45min
+  17000/27067  repaired=7,606  failed=9,394  3.9/s  ETA 43min
+  17500/27067  repaired=7,741  failed=9,759  4.0/s  ETA 40min
+  18000/27067  repaired=8,023  failed=9,977  4.0/s  ETA 38min
+  18500/27067  repaired=8,182  failed=10,318  4.0/s  ETA 36min
+  19000/27067  repaired=8,328  failed=10,672  4.0/s  ETA 33min
+  19500/27067  repaired=8,455  failed=11,045  4.1/s  ETA 31min
+  20000/27067  repaired=8,719  failed=11,281  4.1/s  ETA 29min
+  20500/27067  repaired=8,937  failed=11,563  4.1/s  ETA 27min
+  21000/27067  repaired=9,091  failed=11,909  4.1/s  ETA 25min
+  21500/27067  repaired=9,218  failed=12,282  4.1/s  ETA 22min
+  22000/27067  repaired=9,395  failed=12,605  4.2/s  ETA 20min
+  22500/27067  repaired=9,585  failed=12,915  4.2/s  ETA 18min
+  23000/27067  repaired=9,828  failed=13,172  4.2/s  ETA 16min
+  23500/27067  repaired=10,048  failed=13,452  4.2/s  ETA 14min
+  24000/27067  repaired=10,251  failed=13,749  4.2/s  ETA 12min
+  24500/27067  repaired=10,421  failed=14,079  4.3/s  ETA 10min
+  25000/27067  repaired=10,618  failed=14,382  4.3/s  ETA 8min
+  25500/27067  repaired=10,921  failed=14,579  4.4/s  ETA 6min
+  26000/27067  repaired=11,067  failed=14,933  4.4/s  ETA 4min
+  26500/27067  repaired=11,316  failed=15,184  4.5/s  ETA 2min
+  27000/27067  repaired=11,530  failed=15,470  4.5/s  ETA 0min
+
+============================================================
+Done in 100.0 min
+  Repaired: 11,572
+  Failed:   15,495  (genuinely deleted / no archive)
+  Output → /Users/elizabethgreer/Downloads/elsalvador/output/repaired_articles.csv

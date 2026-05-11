@@ -1,0 +1,51 @@
+[resume] 0 articles already scraped
+
+============================================================
+OUTLET: gatoencerrado  (gatoencerrado.news)
+============================================================
+[gatoencerrado] Checking sitemap ...
+    sitemap: 3,623 URLs from https://gatoencerrado.news/sitemap.xml
+  3,623 URLs found, 3,623 not yet scraped
+  Scraping 3,623 articles with 6 workers ...
+    100/3623  saved=0  skipped=100  21.2/s  ETA 3min
+    200/3623  saved=0  skipped=200  26.2/s  ETA 2min
+    300/3623  saved=0  skipped=300  29.5/s  ETA 2min
+    400/3623  saved=0  skipped=400  32.5/s  ETA 2min
+    500/3623  saved=0  skipped=500  34.6/s  ETA 2min
+    600/3623  saved=0  skipped=600  36.5/s  ETA 1min
+    700/3623  saved=0  skipped=700  33.3/s  ETA 1min
+    800/3623  saved=0  skipped=800  33.1/s  ETA 1min
+    900/3623  saved=0  skipped=900  33.7/s  ETA 1min
+    1000/3623  saved=0  skipped=1000  34.5/s  ETA 1min
+    1100/3623  saved=0  skipped=1100  35.3/s  ETA 1min
+    1200/3623  saved=0  skipped=1200  36.1/s  ETA 1min
+    1300/3623  saved=0  skipped=1300  36.9/s  ETA 1min
+    1400/3623  saved=0  skipped=1400  37.6/s  ETA 1min
+    1500/3623  saved=0  skipped=1500  37.9/s  ETA 1min
+    1600/3623  saved=0  skipped=1600  38.2/s  ETA 1min
+    1700/3623  saved=0  skipped=1700  38.6/s  ETA 1min
+    1800/3623  saved=0  skipped=1800  39.0/s  ETA 1min
+    1900/3623  saved=0  skipped=1900  39.4/s  ETA 1min
+    2000/3623  saved=0  skipped=2000  39.7/s  ETA 1min
+    2100/3623  saved=0  skipped=2100  40.0/s  ETA 1min
+    2200/3623  saved=0  skipped=2200  40.3/s  ETA 1min
+    2300/3623  saved=0  skipped=2300  40.6/s  ETA 1min
+    2400/3623  saved=0  skipped=2400  40.9/s  ETA 0min
+    2500/3623  saved=0  skipped=2500  41.1/s  ETA 0min
+    2600/3623  saved=0  skipped=2600  41.4/s  ETA 0min
+    2700/3623  saved=0  skipped=2700  41.6/s  ETA 0min
+    2800/3623  saved=0  skipped=2800  41.7/s  ETA 0min
+    2900/3623  saved=0  skipped=2900  41.9/s  ETA 0min
+    3000/3623  saved=0  skipped=3000  42.1/s  ETA 0min
+    3100/3623  saved=0  skipped=3100  42.3/s  ETA 0min
+    3200/3623  saved=0  skipped=3200  42.4/s  ETA 0min
+    3300/3623  saved=0  skipped=3300  42.6/s  ETA 0min
+    3400/3623  saved=0  skipped=3400  42.7/s  ETA 0min
+    3500/3623  saved=0  skipped=3500  42.8/s  ETA 0min
+    3600/3623  saved=0  skipped=3600  42.9/s  ETA 0min
+  → saved 0 articles, skipped 3,623
+
+============================================================
+Total new articles scraped: 0
+Output → /Users/elizabethgreer/Downloads/elsalvador/output/new_outlets_articles.csv
+URL list → /Users/elizabethgreer/Downloads/elsalvador/output/new_outlet_urls.csv

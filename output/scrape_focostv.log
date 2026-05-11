@@ -1,0 +1,45 @@
+[resume] 0 articles already scraped
+
+============================================================
+OUTLET: focostv  (focostv.com)
+============================================================
+[focostv] Checking sitemap ...
+    sitemap: 3,098 URLs from https://focostv.com/sitemap.xml
+  3,098 URLs found, 3,098 not yet scraped
+  Scraping 3,098 articles with 6 workers ...
+    100/3098  saved=57  skipped=43  3.8/s  ETA 13min
+    200/3098  saved=57  skipped=143  0.4/s  ETA 108min
+    300/3098  saved=57  skipped=243  0.3/s  ETA 178min
+    400/3098  saved=57  skipped=343  0.2/s  ETA 200min
+    500/3098  saved=57  skipped=443  0.2/s  ETA 213min
+    600/3098  saved=57  skipped=543  0.2/s  ETA 218min
+    700/3098  saved=74  skipped=626  0.2/s  ETA 208min
+    800/3098  saved=94  skipped=706  0.2/s  ETA 184min
+    900/3098  saved=94  skipped=806  0.2/s  ETA 183min
+    1000/3098  saved=94  skipped=906  0.2/s  ETA 181min
+    1100/3098  saved=94  skipped=1006  0.2/s  ETA 177min
+    1200/3098  saved=94  skipped=1106  0.2/s  ETA 171min
+    1300/3098  saved=94  skipped=1206  0.2/s  ETA 165min
+    1400/3098  saved=142  skipped=1258  0.2/s  ETA 147min
+    1500/3098  saved=143  skipped=1357  0.2/s  ETA 137min
+    1600/3098  saved=143  skipped=1457  0.2/s  ETA 130min
+    1700/3098  saved=143  skipped=1557  0.2/s  ETA 124min
+    1800/3098  saved=143  skipped=1657  0.2/s  ETA 117min
+    1900/3098  saved=143  skipped=1757  0.2/s  ETA 109min
+    2000/3098  saved=162  skipped=1838  0.2/s  ETA 100min
+    2100/3098  saved=181  skipped=1919  0.2/s  ETA 87min
+    2200/3098  saved=181  skipped=2019  0.2/s  ETA 80min
+    2300/3098  saved=181  skipped=2119  0.2/s  ETA 72min
+    2400/3098  saved=181  skipped=2219  0.2/s  ETA 63min
+    2500/3098  saved=181  skipped=2319  0.2/s  ETA 55min
+    2600/3098  saved=181  skipped=2419  0.2/s  ETA 46min
+    2700/3098  saved=243  skipped=2457  0.2/s  ETA 36min
+    2800/3098  saved=304  skipped=2496  0.2/s  ETA 26min
+    2900/3098  saved=362  skipped=2538  0.2/s  ETA 17min
+    3000/3098  saved=421  skipped=2579  0.2/s  ETA 8min
+  → saved 480 articles, skipped 2,618
+
+============================================================
+Total new articles scraped: 480
+Output → /Users/elizabethgreer/Downloads/elsalvador/output/new_outlets_articles.csv
+URL list → /Users/elizabethgreer/Downloads/elsalvador/output/new_outlet_urls.csv

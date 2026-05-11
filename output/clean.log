@@ -1,0 +1,49 @@
+Loading sources...
+    12,787  repaired
+    87,780  hf_news
+    17,629  gdelt_sv
+    56,657  articles_text
+       661  new_outlets
+    56,503  intl
+   232,017  TOTAL raw
+
+Deduplicating by URL...
+  After URL dedup: 178,933
+
+Cleaning...
+  Dropped (bad domain):    7,557
+  Dropped (error page):       72
+  Dropped (short/dedup):  31,667
+
+Writing 139,637 articles → /Users/elizabethgreer/Downloads/elsalvador/output/articles_master.csv
+
+==================================================
+Master corpus: 139,637 articles
+    85,912  hf_news
+    30,849  intl
+     8,815  articles_text
+     8,157  repaired
+     5,264  gdelt_sv
+       640  new_outlets
+
+Top 20 domains:
+    46,326  diario.elmundo.sv
+    22,779  historico.elsalvador.com
+    13,796  eldiariodehoy.com
+     7,497  lapagina.com.sv
+     5,170  laprensagrafica.com
+     3,704  elsalvador.com
+     2,663  diariocolatino.com
+     1,971  elsalvadorgram.com
+     1,115  fiscalia.gob.sv
+     1,041  rree.gob.sv
+       639  eleconomista.net
+       593  proceso.hn
+       586  presidencia.gob.sv
+       565  dw.com
+       545  diario1.com
+       475  diariolibre.com
+       462  focostv.com
+       433  latimes.com
+       336  nacion.com
+       291  univision.com

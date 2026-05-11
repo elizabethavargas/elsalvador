@@ -1,22 +1,26 @@
 """
-clean_articles.py — Clean output/articles_text.csv, removing 404/error pages
-and stripping scraper boilerplate from surviving article text.
+clean_articles.py — Merge all article sources into one master corpus.
+
+SOURCES (in priority order — first-seen URL wins on dedup):
+  1. repaired_articles.csv     — explicitly repaired broken URLs
+  2. hf_news.csv               — HuggingFace Salvadoran news datasets
+  3. gdelt_sv_articles.csv     — domestic outlets via GDELT BQ
+  4. articles_text.csv         — original scrape
+  5. new_outlets_articles.csv  — focostv, revistafactum, etc.
+  6. international_articles.csv — Reuters, DW, Guardian, etc.
 
 WHAT IT DOES:
-  1. Drops entire domains known to be all-404 (elmundo.sv)
-  2. Drops articles whose title or first 200 chars match 404/error patterns
-  3. Strips common boilerplate from the start/end of article text:
-       - Section/category header lines
-       - "por\n\nRedacción …\nhace N días\n0\n" byline blocks
-       - Trailing nav/social/cookie footers
-  4. Drops articles with fewer than MIN_WORDS after cleaning
-  5. Recalculates word_count
-
-OUTPUT: output/articles_text_clean.csv  (same columns as input)
+  1. Loads and normalises columns across all sources
+  2. Deduplicates by URL (priority order above)
+  3. Near-deduplicates by normalised title (keeps first)
+  4. Drops broken/error rows
+  5. Strips leading/trailing boilerplate from text
+  6. Drops articles shorter than MIN_WORDS after cleaning
+  7. Writes output/articles_master.csv
 
 USAGE:
   python3 collect/clean_articles.py
-  python3 collect/clean_articles.py --min-words 60
+  python3 collect/clean_articles.py --min-words 60 --no-intl
 """
 
 import argparse
@@ -24,88 +28,75 @@ import csv
 import os
 import re
 import sys
+from urllib.parse import urlparse
+
+csv.field_size_limit(sys.maxsize)
 
 REPO_ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INPUT_CSV  = os.path.join(REPO_ROOT, "output", "articles_text.csv")
-OUTPUT_CSV = os.path.join(REPO_ROOT, "output", "articles_text_clean.csv")
+OUT_DIR    = os.path.join(REPO_ROOT, "output")
+OUTPUT_CSV = os.path.join(OUT_DIR, "articles_master.csv")
 
-MIN_WORDS_DEFAULT = 30  # applied to RAW word_count so header words still count
+MIN_WORDS_DEFAULT = 50
 
-# Domains where every article is a 404 / fully broken — drop entirely
-DROP_DOMAINS = {"elmundo.sv"}
+# Output columns (superset — extras filled with "")
+OUTPUT_FIELDS = ["url", "year", "month", "title", "domain",
+                 "text", "word_count", "source_file"]
 
-# Patterns in the title or first 200 chars of text that signal a 404/error page
-ERROR_PATTERNS = [
-    r"404",
-    r"not found",
-    r"no encontramos",
-    r"p[aá]gina.{0,20}(no existe|que buscas)",
-    r"page not found",
-    r"javascript (is )?required",
-    r"cookies? (are )?required",
-    r"access denied",
-    r"forbidden",
-]
-ERROR_RE = re.compile("|".join(ERROR_PATTERNS), re.IGNORECASE)
+# ─────────────────────────────────────────────────────
+# DROP / ERROR RULES
+# ─────────────────────────────────────────────────────
+DROP_DOMAINS = {"elmundo.sv"}   # old domain — all 404; real content is at diario.elmundo.sv
+
+ERROR_RE = re.compile(
+    r"404|not found|no encontramos|p[aá]gina.{0,20}(no existe|que buscas)"
+    r"|page not found|javascript (is )?required|cookies? (are )?required"
+    r"|access denied|forbidden|suscr[ií]bete para continuar",
+    re.IGNORECASE,
+)
 
 # ─────────────────────────────────────────────────────
 # TEXT CLEANING
 # ─────────────────────────────────────────────────────
-
-# Leading boilerplate: section label + duplicate title + byline block.
-# Handles both forms:
-#   "Nacionales\n\nTitle\npor\n\nRedacción …\nhace 3 meses\n0\n<content>"
-#   "Opinión – Sitio\nOpinión\n\nOpinión\n\nTitle\npor\n\nAuthor\nhace 2 meses\n\n<content>"
 _BYLINE_BLOCK = re.compile(
-    r"^.*?\npor\s*\n\s*[^\n]+\n"           # everything up to "por\n\nauthor\n"
-    r"[^\n]*(hace|published|publicado)[^\n]*\n"  # "hace N meses/días" line
-    r"(\d+\n)?",                            # optional comment-count line
+    r"^.*?\npor\s*\n\s*[^\n]+\n"
+    r"[^\n]*(hace|published|publicado)[^\n]*\n"
+    r"(\d+\n)?",
     re.IGNORECASE | re.DOTALL,
 )
-# Simpler leading section header: one short word/phrase followed by a blank line
 _SECTION_HEADER = re.compile(r"^\s*[A-ZÁÉÍÓÚÑ][^\n]{0,40}\n\n", re.UNICODE)
 
-# Trailing boilerplate footers (social share prompts, cookie notices, etc.)
-_FOOTER_PATTERNS = [
-    re.compile(p, re.IGNORECASE) for p in [
-        r"\n(compartir|share)\s*$",
-        r"\n(suscr[ií]bete|subscribe)[^\n]*$",
-        re.escape("©"),
-        r"\ntodos los derechos reservados",
-        r"\n(cookies?|privacidad|privacy)[^\n]*$",
-        r"\n(ver m[aá]s|read more|continue reading)[^\n]*$",
-        r"\nir al inicio[^\n]*$",
-    ]
-]
+_FOOTER_PATTERNS = [re.compile(p, re.IGNORECASE) for p in [
+    r"\n(compartir|share)\s*$",
+    r"\n(suscr[ií]bete|subscribe)[^\n]*$",
+    re.escape("©"),
+    r"\ntodos los derechos reservados",
+    r"\n(cookies?|privacidad|privacy)[^\n]*$",
+    r"\n(ver m[aá]s|read more|continue reading)[^\n]*$",
+    r"\nir al inicio[^\n]*$",
+]]
 
 
 def clean_text(raw: str) -> str:
     text = raw
-
-    # Fix common mojibake from latin-1/utf-8 confusion
+    # Fix common mojibake
     try:
         text = text.encode("latin-1").decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
         pass
-
-    # Strip leading byline block (section + title + por/Redacción/hace N días/0)
+    # Strip leading byline block
     m = _BYLINE_BLOCK.match(text)
     if m:
         text = text[m.end():]
     else:
-        # Fallback: strip a single-line section header if present
         m2 = _SECTION_HEADER.match(text)
         if m2:
             text = text[m2.end():]
-
     # Strip trailing boilerplate
     for pat in _FOOTER_PATTERNS:
         text = pat.sub("", text)
-
-    # Collapse excessive whitespace
+    # Collapse whitespace
     text = re.sub(r"\n{3,}", "\n\n", text)
-    text = text.strip()
-    return text
+    return text.strip()
 
 
 def word_count(text: str) -> int:
@@ -113,67 +104,220 @@ def word_count(text: str) -> int:
 
 
 # ─────────────────────────────────────────────────────
+# NORMALISE TITLE for near-dedup
+# ─────────────────────────────────────────────────────
+def norm_domain(domain: str, url: str = "") -> str:
+    """Strip www. and extract from URL if domain is blank."""
+    d = domain.strip()
+    if not d and url:
+        try:
+            d = urlparse(url).netloc
+        except Exception:
+            pass
+    # Remove leading www.
+    if d.startswith("www."):
+        d = d[4:]
+    return d.lower()
+
+
+def norm_title(title: str) -> str:
+    """Lowercase, strip punctuation/spaces for near-dedup."""
+    t = title.lower()
+    t = re.sub(r"[^a-záéíóúñü0-9]", "", t)
+    return t[:120]   # cap length so tiny truncations don't matter
+
+
+# ─────────────────────────────────────────────────────
+# LOAD HELPERS
+# ─────────────────────────────────────────────────────
+def _year_month(date_str: str):
+    """Extract (year, month) strings from YYYY-MM-DD or YYYYMMDD or YYYY/MM/..."""
+    if not date_str:
+        return "", ""
+    date_str = date_str.strip()
+    # YYYY-MM-DD
+    m = re.match(r"(\d{4})-(\d{2})", date_str)
+    if m:
+        return m.group(1), m.group(2)
+    # YYYYMMDD
+    m = re.match(r"(\d{4})(\d{2})\d{2}", date_str)
+    if m:
+        return m.group(1), m.group(2)
+    # YYYY/MM
+    m = re.match(r"(\d{4})/(\d{2})", date_str)
+    if m:
+        return m.group(1), m.group(2)
+    # Just YYYY
+    m = re.match(r"(\d{4})", date_str)
+    if m:
+        return m.group(1), ""
+    return "", ""
+
+
+def load_standard(path: str, source_label: str):
+    """Load CSVs with standard schema: url,year,month,title,domain,text,word_count,..."""
+    rows = []
+    if not os.path.exists(path):
+        print(f"  [skip] not found: {path}")
+        return rows
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
+        for r in csv.DictReader(f):
+            url = r.get("url", "").strip()
+            rows.append({
+                "url":        url,
+                "year":       r.get("year", "").strip(),
+                "month":      r.get("month", "").strip(),
+                "title":      r.get("title", "").strip(),
+                "domain":     norm_domain(r.get("domain", ""), url),
+                "text":       r.get("text", "").strip(),
+                "word_count": r.get("word_count", "0"),
+                "source_file": source_label,
+            })
+    return rows
+
+
+def load_hf_news(path: str):
+    """Load hf_news.csv which uses different column names."""
+    rows = []
+    if not os.path.exists(path):
+        print(f"  [skip] not found: {path}")
+        return rows
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
+        for r in csv.DictReader(f):
+            url   = r.get("url", "").strip()
+            text  = r.get("content", "").strip()
+            title = r.get("title", "").strip()
+            date  = r.get("date", "").strip()
+            year, month = _year_month(date)
+            domain = norm_domain(r.get("source", ""), url)
+            rows.append({
+                "url":         url,
+                "year":        year,
+                "month":       month,
+                "title":       title,
+                "domain":      domain,
+                "text":        text,
+                "word_count":  str(len(text.split())),
+                "source_file": "hf_news",
+            })
+    return rows
+
+
+# ─────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────
-def main(min_words: int = MIN_WORDS_DEFAULT):
-    stats = {
-        "read": 0,
-        "dropped_domain": 0,
-        "dropped_error":  0,
-        "dropped_short":  0,
-        "kept":           0,
-    }
+def main(min_words: int = MIN_WORDS_DEFAULT, include_intl: bool = True):
 
-    with open(INPUT_CSV, encoding="utf-8-sig", errors="replace") as fin, \
-         open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as fout:
+    # ── Load all sources in priority order ──
+    print("Loading sources...")
+    sources = [
+        ("repaired",      load_standard(os.path.join(OUT_DIR, "repaired_articles.csv"),      "repaired")),
+        ("hf_news",       load_hf_news(os.path.join(OUT_DIR, "hf_news.csv"))),
+        ("gdelt_sv",      load_standard(os.path.join(OUT_DIR, "gdelt_sv_articles.csv"),      "gdelt_sv")),
+        ("articles_text", load_standard(os.path.join(OUT_DIR, "articles_text.csv"),          "articles_text")),
+        ("new_outlets",   load_standard(os.path.join(OUT_DIR, "new_outlets_articles.csv"),   "new_outlets")),
+    ]
+    if include_intl:
+        sources.append(
+            ("intl", load_standard(os.path.join(OUT_DIR, "international_articles.csv"), "intl"))
+        )
 
-        reader = csv.DictReader(fin)
-        writer = csv.DictWriter(fout, fieldnames=reader.fieldnames)
-        writer.writeheader()
+    total_raw = 0
+    for label, rows in sources:
+        print(f"  {len(rows):>8,}  {label}")
+        total_raw += len(rows)
+    print(f"  {total_raw:>8,}  TOTAL raw")
 
-        for row in reader:
-            stats["read"] += 1
-            domain = row.get("domain", "").strip()
-
-            # 1. Drop known all-404 domains
-            if domain in DROP_DOMAINS:
-                stats["dropped_domain"] += 1
+    # ── Dedup by URL (first seen wins) ──
+    print("\nDeduplicating by URL...")
+    url_seen: set = set()
+    deduped = []
+    for _, rows in sources:
+        for r in rows:
+            url = r["url"]
+            if not url or url in url_seen:
                 continue
+            url_seen.add(url)
+            deduped.append(r)
+    print(f"  After URL dedup: {len(deduped):,}")
 
-            # 2. Drop error pages detected by pattern
-            title = row.get("title", "")
-            text  = row.get("text", "")
-            probe = (title + " " + text[:200]).lower()
-            if ERROR_RE.search(probe):
-                stats["dropped_error"] += 1
+    # ── Drop broken domains / error pages / shorts ──
+    print("\nCleaning...")
+    stats = {"dropped_domain": 0, "dropped_error": 0,
+             "dropped_short": 0, "kept": 0}
+    cleaned = []
+    title_seen: set = set()
+
+    for r in deduped:
+        domain = r.get("domain", "").strip()
+
+        if domain in DROP_DOMAINS:
+            stats["dropped_domain"] += 1
+            continue
+
+        title = r.get("title", "")
+        text  = r.get("text",  "")
+        probe = (title + " " + text[:300]).lower()
+        if ERROR_RE.search(probe):
+            stats["dropped_error"] += 1
+            continue
+
+        raw_wc = int(r.get("word_count") or 0)
+        if raw_wc < min_words:
+            stats["dropped_short"] += 1
+            continue
+
+        # Near-dedup by title
+        nt = norm_title(title)
+        if nt and len(nt) > 15:   # skip very short/empty titles from dedup
+            if nt in title_seen:
+                stats["dropped_short"] += 1   # reuse bucket
                 continue
+            title_seen.add(nt)
 
-            # 3. Drop articles that were too short even before cleaning
-            raw_wc = int(row.get("word_count") or 0)
-            if raw_wc < min_words:
-                stats["dropped_short"] += 1
-                continue
+        # Clean text
+        text_clean = clean_text(text)
+        wc = word_count(text_clean)
+        if wc < min_words:
+            stats["dropped_short"] += 1
+            continue
 
-            # 4. Clean text and update word count
-            cleaned = clean_text(text)
-            row["text"]       = cleaned
-            row["word_count"] = word_count(cleaned)
-            writer.writerow(row)
-            stats["kept"] += 1
+        r["text"]       = text_clean
+        r["word_count"] = wc
+        cleaned.append(r)
+        stats["kept"] += 1
 
-    print(f"Input:              {stats['read']:>7,} articles")
-    print(f"Dropped (domain):   {stats['dropped_domain']:>7,}  "
-          f"({', '.join(DROP_DOMAINS)})")
-    print(f"Dropped (error pg): {stats['dropped_error']:>7,}")
-    print(f"Dropped (<{min_words} words): {stats['dropped_short']:>7,}")
-    print(f"─────────────────────────────")
-    print(f"Kept:               {stats['kept']:>7,}  → {OUTPUT_CSV}")
+    print(f"  Dropped (bad domain):  {stats['dropped_domain']:>7,}")
+    print(f"  Dropped (error page):  {stats['dropped_error']:>7,}")
+    print(f"  Dropped (short/dedup): {stats['dropped_short']:>7,}")
+
+    # ── Write ──
+    print(f"\nWriting {len(cleaned):,} articles → {OUTPUT_CSV}")
+    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=OUTPUT_FIELDS, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(cleaned)
+
+    print(f"\n{'='*50}")
+    print(f"Master corpus: {stats['kept']:,} articles")
+
+    # Source breakdown
+    from collections import Counter
+    src_counts = Counter(r["source_file"] for r in cleaned)
+    for src, cnt in src_counts.most_common():
+        print(f"  {cnt:>8,}  {src}")
+
+    # Domain breakdown (top 20)
+    print("\nTop 20 domains:")
+    dom_counts = Counter(r["domain"] for r in cleaned)
+    for dom, cnt in dom_counts.most_common(20):
+        print(f"  {cnt:>8,}  {dom}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--min-words", type=int, default=MIN_WORDS_DEFAULT,
-                        help=f"Drop articles shorter than N words after cleaning "
-                             f"(default: {MIN_WORDS_DEFAULT})")
+    parser = argparse.ArgumentParser(description="Merge and clean all article sources.")
+    parser.add_argument("--min-words", type=int, default=MIN_WORDS_DEFAULT)
+    parser.add_argument("--no-intl", action="store_true",
+                        help="Exclude international_articles.csv")
     args = parser.parse_args()
-    main(args.min_words)
+    main(min_words=args.min_words, include_intl=not args.no_intl)

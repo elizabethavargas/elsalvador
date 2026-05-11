@@ -1,58 +1,59 @@
 """
-GDELT.py — El Salvador political article URL collection via GDELT Doc API
+gdelt.py — El Salvador political article URL collection
 
-HOW TO GET ALL THE DATA (the core problem with the old version):
-  The GDELT API returns at most 250 records per call.  If a time window has
-  more than 250 matching articles you can't page through them — you just get
-  the first 250.  The solution is to use SMALLER time windows (weekly instead
-  of monthly) AND multiple focused political query terms so each sub-query
-  stays under the cap.
+TWO MODES:
 
-  Old approach  : 1 query × 12 months × 50 records  =    600 max/year
-  New approach  : 20 terms × 52 weeks  × 250 records = 260 000 max/year
+1. API mode (default):
+   Queries the GDELT Doc API week-by-week for political search terms.
+   Usage:  python3 collect/gdelt.py
 
-RESTART SAFETY:
-  - URLs are appended to gdelt_urls.csv after EVERY (term × week) batch.
-  - gdelt_progress.json records the last completed (term_index, year, week).
-  - Re-running the script skips everything already saved.
+2. BigQuery CSV mode:
+   Reads a GDELT BigQuery export (e.g. dfd_bq_full.csv), filters to El
+   Salvador-relevant rows, deduplicates, and writes new URLs to gdelt_urls.csv.
+   Usage:  python3 collect/gdelt.py --bq-input /path/to/dfd_bq_full.csv
 
-OUTPUT: gdelt_urls.csv
+FILTERING (BQ mode):
+  Keep a row if:
+    (a) ActionGeo_CountryCode == 'ES'  — event occurred in El Salvador, OR
+    (b) article domain is a known Salvadoran news site
+  Then additionally apply the URL section filter (skip sports/entertainment/etc.)
+  and deduplicate against any URLs already in gdelt_urls.csv.
+
+  Why exclude US-action-geo rows from non-SV domains?  GDELT maps many articles
+  about Salvadoran immigrants committing crimes in US cities to ActionGeo=US.
+  Those are not about El Salvador politics and would flood the corpus with noise.
+
+OUTPUT: output/gdelt_urls.csv
   Columns: url | year | month | title | domain | seendate | query_term
 """
 
+import argparse
 import csv
 import datetime
 import json
 import os
 import re
 import time
+from urllib.parse import urlparse
 
 import requests
 
-# ─────────────────────────────────────────────
-# CONFIGURATION
-# ─────────────────────────────────────────────
-START_YEAR     = 2018          # change to restart partway (see gdelt_progress.json)
-END_YEAR       = 2025
-MAX_RECORDS    = 250           # GDELT API hard cap — do not raise above 250
-API_DELAY_SEC  = 1.2           # seconds between API calls (be polite)
-REQUEST_TIMEOUT = 60
+REPO_ROOT     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_CSV    = os.path.join(REPO_ROOT, "output", "gdelt_urls.csv")
+PROGRESS_FILE = os.path.join(REPO_ROOT, "output", "gdelt_progress.json")
 
-OUTPUT_CSV     = "gdelt_urls.csv"
-PROGRESS_FILE  = "gdelt_progress.json"
-GDELT_URL      = "https://api.gdeltproject.org/api/v2/doc/doc"
+# ─────────────────────────────────────────────
+# API MODE CONFIGURATION
+# ─────────────────────────────────────────────
+START_YEAR      = 2018
+END_YEAR        = 2025
+MAX_RECORDS     = 250          # GDELT API hard cap
+API_DELAY_SEC   = 1.2
+REQUEST_TIMEOUT = 60
+GDELT_URL       = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 CSV_FIELDS = ["url", "year", "month", "title", "domain", "seendate", "query_term"]
 
-# ─────────────────────────────────────────────
-# POLITICAL SEARCH TERMS
-#
-# Each term is queried separately for every weekly window.
-# "sourcecountry:ES" restricts results to El Salvador-based news outlets
-# (GDELT uses FIPS 10-4 codes; ES = El Salvador).
-# Using multiple terms ensures we don't miss articles that contain
-# only one political keyword.
-# ─────────────────────────────────────────────
 QUERY_TERMS = [
     'sourcecountry:ES "Bukele"',
     'sourcecountry:ES "Asamblea Legislativa" "El Salvador"',
@@ -77,84 +78,121 @@ QUERY_TERMS = [
 ]
 
 # ─────────────────────────────────────────────
-# URL-LEVEL SECTION FILTER
+# BQ MODE: KNOWN SALVADORAN DOMAINS
 #
-# Skips URLs whose path contains clearly non-political section names.
-# Mirrors the SKIP_URL_PATTERNS logic in config.py so both pipelines
-# stay consistent.
+# If a row's domain matches one of these, keep it regardless of ActionGeo.
+# Covers outlets we know report on El Salvador politics.
+# ─────────────────────────────────────────────
+SALVADORAN_DOMAINS = {
+    # El Diario de Hoy / elsalvador.com
+    "www.elsalvador.com", "elsalvador.com",
+    "historico.elsalvador.com",
+    # La Prensa Gráfica
+    "www.laprensagrafica.com", "laprensagrafica.com",
+    # El Mundo
+    "elmundo.sv", "diario.elmundo.sv", "www.elmundo.sv",
+    # La Página
+    "www.lapagina.com.sv", "lapagina.com.sv",
+    # Diario Co Latino
+    "www.diariocolatino.com", "diariocolatino.com",
+    # El Faro
+    "elfaro.net", "www.elfaro.net",
+    # Diario 1
+    "diario1.com", "www.diario1.com",
+    # Investigative / alternative outlets
+    "revistafactum.com", "www.revistafactum.com",
+    "gatoencerrado.news", "www.gatoencerrado.news",
+    "focostv.com", "www.focostv.com",
+    "contrapunto.com.sv", "www.contrapunto.com.sv",
+    "nuevotribuno.com.sv", "www.nuevotribuno.com.sv",
+    # Official government
+    "www.asamblea.gob.sv", "asamblea.gob.sv",
+    "rree.gob.sv", "www.rree.gob.sv",
+    "presidencia.gob.sv", "www.presidencia.gob.sv",
+    "www.fiscalia.gob.sv", "fiscalia.gob.sv",
+    "www.pddh.gob.sv", "pddh.gob.sv",
+    "www.tse.gob.sv", "tse.gob.sv",
+    # Regional wires that focus on El Salvador
+    "www.centralamericadata.com", "centralamericadata.com",
+}
+
+# Aggregator/syndication domains to skip even if ActionGeo=ES.
+# These are hub pages (Yahoo, MSN) or US hyper-local outlets that only
+# mention El Salvador in the context of local crime / immigration stories.
+SKIP_DOMAINS = {
+    "www.yahoo.com", "news.yahoo.com", "yahoo.com",
+    "www.msn.com", "msn.com",
+    # US local news — primarily cover Salvadoran immigrant crime, not politics
+    "www.chron.com", "www.sfgate.com", "www.latimes.com",
+    "www.sandiegouniontribune.com", "www.lmtonline.com",
+    "mynorthwest.com", "tucson.com",
+    "www.expressnews.com", "www.mercurynews.com",
+    "www.dallasnews.com", "www.star-telegram.com",
+    # Tabloids
+    "www.dailymail.co.uk",
+}
+
+
+# ─────────────────────────────────────────────
+# SHARED: URL SECTION FILTER
 # ─────────────────────────────────────────────
 _SKIP_SECTION_RE = re.compile(
     r"/("
     r"deportes|sports|futbol|deporte|"
     r"entretenimiento|farandula|espectaculos|"
-    r"internacional|mundo|global|"           # international news ≠ El Salvador domestic
+    r"internacional|mundo|global|"
     r"tecnologia|salud|turismo|moda|"
     r"clasificados|horoscopo|recetas|vida|cocina|"
     r"h-deportes|h-internacional|h-entretenimiento|"
-    r"h-tecnologia|h-salud|h-vida|h-espectaculos"
+    r"h-tecnologia|h-salud|h-vida|h-espectaculos|"
+    r"guia-mundialista"
     r")/",
     re.IGNORECASE,
 )
 
 def is_political_url(url: str) -> bool:
-    """Return False if the URL path clearly signals a non-political section."""
     return not _SKIP_SECTION_RE.search(url)
 
 
+def bare_domain(url: str) -> str:
+    """Return netloc without trailing slash."""
+    try:
+        return urlparse(url).netloc.lower()
+    except Exception:
+        return ""
+
+
 # ─────────────────────────────────────────────
-# YEAR EXTRACTION FROM URL
-#
-# Supports: /YYYY/MM/DD/, /YYYY/MM/, YYYY-MM-DD slug, trailing /YYYY/
-# Returns the year as a string, or "" if not found.
+# SHARED: YEAR EXTRACTION FROM URL
 # ─────────────────────────────────────────────
 def extract_year_from_url(url: str) -> str:
-    """
-    Extract a 4-digit year (2000-2030) from a URL using common news-site patterns.
-    Returns the year as a string, or "" if not found.
-
-    Patterns handled:
-      /YYYY/MM/DD/      elfaro, laprensagrafica, etc.
-      /YYYY/MM/         archive-style paths
-      /YYYYMM/          elfaro compact format (e.g. /202203/)
-      YYYY-MM-DD        date in slug
-      /YYYY at path end elsalvador.com trailing year (e.g. /slug/64046/2026/)
-    """
     clean = url.split("?")[0].split("#")[0]
-
-    # /YYYY/MM/DD/ or /YYYY/MM/
     m = re.search(r"/(\d{4})/(\d{1,2})/", clean)
     if m:
         yr, mo = int(m.group(1)), int(m.group(2))
         if 2000 <= yr <= 2030 and 1 <= mo <= 12:
             return m.group(1)
-
-    # /YYYYMM/ — 6-digit compact year+month (elfaro.net style: /202203/)
     m = re.search(r"/(\d{4})(\d{2})/", clean)
     if m:
         yr, mo = int(m.group(1)), int(m.group(2))
         if 2000 <= yr <= 2030 and 1 <= mo <= 12:
             return m.group(1)
-
-    # YYYY-MM-DD in slug
     m = re.search(r"(\d{4})-(\d{2})-\d{2}", clean)
     if m:
         yr, mo = int(m.group(1)), int(m.group(2))
         if 2000 <= yr <= 2030 and 1 <= mo <= 12:
             return m.group(1)
-
-    # Trailing /YYYY at path end (elsalvador.com: /slug/64046/2026/)
     m = re.search(r"/(\d{4})$", clean.rstrip("/"))
     if m and 2000 <= int(m.group(1)) <= 2030:
         return m.group(1)
-
     return ""
 
 
 # ─────────────────────────────────────────────
-# CSV HELPERS
+# SHARED: CSV HELPERS
 # ─────────────────────────────────────────────
 def init_csv():
-    """Create CSV with header row if it doesn't already exist."""
+    os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
     if not os.path.exists(OUTPUT_CSV):
         with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
             csv.DictWriter(f, fieldnames=CSV_FIELDS).writeheader()
@@ -162,7 +200,6 @@ def init_csv():
 
 
 def load_existing_urls() -> set:
-    """Read all URLs already saved so we can skip them on resume."""
     if not os.path.exists(OUTPUT_CSV):
         return set()
     seen = set()
@@ -170,12 +207,11 @@ def load_existing_urls() -> set:
         for row in csv.DictReader(f):
             if row.get("url"):
                 seen.add(row["url"])
-    print(f"[resume] Loaded {len(seen):,} existing URLs from {OUTPUT_CSV}")
+    print(f"[resume] {len(seen):,} URLs already in {OUTPUT_CSV}")
     return seen
 
 
 def append_rows(rows: list):
-    """Append a list of row dicts to the CSV (no header)."""
     if not rows:
         return
     with open(OUTPUT_CSV, "a", newline="", encoding="utf-8") as f:
@@ -183,7 +219,7 @@ def append_rows(rows: list):
 
 
 # ─────────────────────────────────────────────
-# PROGRESS / RESUME
+# API MODE HELPERS
 # ─────────────────────────────────────────────
 def load_progress() -> dict:
     if os.path.exists(PROGRESS_FILE):
@@ -194,50 +230,26 @@ def load_progress() -> dict:
 
 def save_progress(term_idx: int, year: int, week: int):
     with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
-        json.dump(
-            {"last_term_idx": term_idx, "last_year": year, "last_week": week},
-            f, indent=2,
-        )
+        json.dump({"last_term_idx": term_idx, "last_year": year,
+                   "last_week": week}, f, indent=2)
 
 
-# ─────────────────────────────────────────────
-# GDELT API
-# ─────────────────────────────────────────────
 def query_gdelt(query: str, start_dt: str, end_dt: str) -> list:
-    """
-    Call the GDELT Doc API for one (query, time-window) combination.
-    Returns a list of article dicts from the API response.
-    """
     params = {
-        "query":         query,
-        "mode":          "ArtList",
-        "format":        "json",
-        "maxrecords":    MAX_RECORDS,
-        "startdatetime": start_dt,
-        "enddatetime":   end_dt,
+        "query": query, "mode": "ArtList", "format": "json",
+        "maxrecords": MAX_RECORDS,
+        "startdatetime": start_dt, "enddatetime": end_dt,
     }
     try:
         r = requests.get(GDELT_URL, params=params, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
-        data = r.json()
-        return data.get("articles") or []
+        return r.json().get("articles") or []
     except Exception as exc:
         print(f"  [API error] {exc}")
         return []
 
 
-# ─────────────────────────────────────────────
-# WEEK ITERATOR
-# ─────────────────────────────────────────────
 def iter_weeks(start_year: int, end_year: int):
-    """
-    Yield (year, iso_week, week_start_date, week_end_date) for every
-    calendar week between start_year-01-01 and end_year-12-31.
-
-    Why weekly?  The GDELT API caps each response at MAX_RECORDS=250.
-    A busy news month can easily have 500+ articles; splitting into weeks
-    ensures we collect from the full range rather than just the first 250.
-    """
     current = datetime.date(start_year, 1, 1)
     end     = datetime.date(end_year, 12, 31)
     while current <= end:
@@ -248,14 +260,127 @@ def iter_weeks(start_year: int, end_year: int):
 
 
 # ─────────────────────────────────────────────
-# MAIN
+# BQ MODE
 # ─────────────────────────────────────────────
-def main():
+def run_bq_mode(bq_path: str):
+    """
+    Read a GDELT BigQuery export, filter to El Salvador-relevant articles,
+    deduplicate, and append new URLs to gdelt_urls.csv.
+
+    Relevance rules:
+      1. ActionGeo_CountryCode == 'ES'  (event in El Salvador)
+         AND domain is not in SKIP_DOMAINS
+      OR
+      2. Domain is in SALVADORAN_DOMAINS  (always keep Salvadoran outlets)
+
+    Then additionally filter by URL section (no sports/entertainment/etc.)
+
+    The --international flag also keeps major wire services (Reuters, AP, DW,
+    WashPost, NYT, Guardian) that covered El Salvador events.  These form a
+    separate analytical tier; off by default to keep the corpus focused.
+    """
+    print(f"\n{'='*70}")
+    print(f"BQ MODE: processing {bq_path}")
+    print(f"{'='*70}\n")
+
+    if not os.path.exists(bq_path):
+        print(f"ERROR: file not found: {bq_path}")
+        return
+
+    init_csv()
+    seen_urls = load_existing_urls()
+
+    total_rows   = 0
+    kept         = 0
+    skip_domain  = 0
+    skip_geo     = 0
+    skip_section = 0
+    skip_dup     = 0
+    new_rows     = []
+
+    print(f"Reading {bq_path} ...")
+    with open(bq_path, encoding="utf-8-sig", errors="replace") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            total_rows += 1
+            if total_rows % 200_000 == 0:
+                print(f"  ...{total_rows:,} rows scanned, {kept:,} kept so far")
+
+            url = (row.get("article_url") or row.get("url") or "").strip()
+            if not url:
+                continue
+
+            # ── Already seen ──
+            if url in seen_urls:
+                skip_dup += 1
+                continue
+
+            domain = bare_domain(url)
+
+            # ── Domain block list (aggregators, US local news) ──
+            if domain in SKIP_DOMAINS:
+                skip_domain += 1
+                continue
+
+            # ── Relevance: must be in El Salvador OR from a Salvadoran outlet ──
+            action_geo_cc = (row.get("ActionGeo_CountryCode") or "").strip()
+            is_sv_action  = (action_geo_cc == "ES")
+            is_sv_domain  = (domain in SALVADORAN_DOMAINS)
+
+            if not is_sv_action and not is_sv_domain:
+                skip_geo += 1
+                continue
+
+            # ── URL section filter ──
+            if not is_political_url(url):
+                skip_section += 1
+                continue
+
+            # ── Accept ──
+            seen_urls.add(url)
+
+            # Parse date from SQLDATE (YYYYMMDD) or MentionTimeDate
+            sql_date = (row.get("SQLDATE") or row.get("MentionTimeDate") or "")
+            year  = sql_date[:4]  if len(sql_date) >= 4  else ""
+            month = sql_date[4:6] if len(sql_date) >= 6  else ""
+            # Fall back to URL-extracted year
+            if not year:
+                year = extract_year_from_url(url)
+
+            new_rows.append({
+                "url":        url,
+                "year":       year,
+                "month":      month,
+                "title":      (row.get("title") or "")[:300],
+                "domain":     domain,
+                "seendate":   sql_date,
+                "query_term": "bq_import",
+            })
+            kept += 1
+
+    append_rows(new_rows)
+
+    print(f"\n{'='*70}")
+    print(f"BQ processing complete.")
+    print(f"  Total rows scanned : {total_rows:,}")
+    print(f"  Duplicates skipped : {skip_dup:,}")
+    print(f"  Domain blocked     : {skip_domain:,}")
+    print(f"  Wrong geo (non-SV) : {skip_geo:,}")
+    print(f"  Section filtered   : {skip_section:,}")
+    print(f"  NEW URLs added     : {kept:,}")
+    print(f"  Output → {OUTPUT_CSV}")
+    print(f"\nNext step:")
+    print(f"  python3 collect/scrape_articles.py --input {OUTPUT_CSV}")
+
+
+# ─────────────────────────────────────────────
+# API MODE
+# ─────────────────────────────────────────────
+def run_api_mode():
     init_csv()
     seen_urls = load_existing_urls()
     progress  = load_progress()
 
-    # Resume position — default to "before everything"
     last_term = progress.get("last_term_idx", -1)
     last_year = progress.get("last_year",     START_YEAR - 1)
     last_week = progress.get("last_week",     0)
@@ -263,17 +388,16 @@ def main():
     total_new      = 0
     total_filtered = 0
 
-    all_weeks = list(iter_weeks(START_YEAR, END_YEAR))
+    all_weeks   = list(iter_weeks(START_YEAR, END_YEAR))
     total_calls = len(QUERY_TERMS) * len(all_weeks)
     call_num    = 0
 
-    print(f"\nGDELT collection: {len(QUERY_TERMS)} terms × {len(all_weeks)} weeks "
+    print(f"\nGDELT API collection: {len(QUERY_TERMS)} terms × {len(all_weeks)} weeks "
           f"= {total_calls:,} API calls")
     print(f"Output → {OUTPUT_CSV}   Progress → {PROGRESS_FILE}\n")
 
     for term_idx, query_term in enumerate(QUERY_TERMS):
 
-        # Resume: skip query terms we've already fully processed
         if term_idx < last_term:
             call_num += len(all_weeks)
             continue
@@ -283,57 +407,39 @@ def main():
         print(f"{'='*70}")
 
         for year, week_num, week_start, week_end in all_weeks:
-
             call_num += 1
 
-            # Resume: skip weeks within the last term that are already done
             if term_idx == last_term and (year, week_num) <= (last_year, last_week):
                 continue
 
             start_dt = week_start.strftime("%Y%m%d") + "000000"
             end_dt   = week_end.strftime("%Y%m%d")   + "235959"
 
-            progress_pct = call_num / total_calls * 100
-            print(
-                f"  [{progress_pct:5.1f}%] {year} W{week_num:02d} "
-                f"({week_start} → {week_end}) ...",
-                end="  ", flush=True,
-            )
+            pct = call_num / total_calls * 100
+            print(f"  [{pct:5.1f}%] {year} W{week_num:02d} "
+                  f"({week_start} → {week_end}) ...", end="  ", flush=True)
 
             articles = query_gdelt(query_term, start_dt, end_dt)
             new_rows = []
 
             for art in articles:
                 url = art.get("url", "").strip()
-                if not url:
+                if not url or url in seen_urls:
                     continue
-
-                # ── Dedup ──
-                if url in seen_urls:
-                    continue
-
-                # ── URL-level political section filter ──
                 if not is_political_url(url):
                     total_filtered += 1
                     continue
-
-                # ── Date out of range (if detectable from URL) ──
                 url_year = extract_year_from_url(url)
                 if url_year and not (str(START_YEAR) <= url_year <= str(END_YEAR)):
                     total_filtered += 1
                     continue
 
                 seen_urls.add(url)
-
-                # ── Parse year/month from GDELT seendate (YYYYMMDDTHHmmssZ) ──
-                sd        = art.get("seendate", "")
-                art_year  = sd[:4]  if len(sd) >= 4  else str(year)
-                art_month = sd[4:6] if len(sd) >= 6  else f"{week_start.month:02d}"
-
+                sd = art.get("seendate", "")
                 new_rows.append({
                     "url":        url,
-                    "year":       art_year,
-                    "month":      art_month,
+                    "year":       sd[:4]  if len(sd) >= 4  else str(year),
+                    "month":      sd[4:6] if len(sd) >= 6  else f"{week_start.month:02d}",
                     "title":      (art.get("title") or "")[:300],
                     "domain":     art.get("domain", ""),
                     "seendate":   sd,
@@ -341,25 +447,42 @@ def main():
                 })
                 total_new += 1
 
-            # ── Save after every batch ──
             append_rows(new_rows)
             save_progress(term_idx, year, week_num)
 
-            print(
-                f"+{len(new_rows):3d} new  "
-                f"(total saved: {len(seen_urls):,}  filtered: {total_filtered:,})"
-            )
-
+            print(f"+{len(new_rows):3d} new  "
+                  f"(total: {len(seen_urls):,}  filtered: {total_filtered:,})")
             time.sleep(API_DELAY_SEC)
 
     print(f"\n{'='*70}")
-    print(f"DONE.  {total_new:,} new URLs saved to {OUTPUT_CSV}")
-    print(f"       {total_filtered:,} URLs filtered out (section/date/duplicate)")
-    print(f"       Total unique URLs: {len(seen_urls):,}")
-    print(f"\nTo restart from scratch: delete {OUTPUT_CSV} and {PROGRESS_FILE}")
-    print(f"To resume after interruption: just run the script again — it will")
-    print(f"  pick up from where it left off using {PROGRESS_FILE}.")
+    print(f"DONE.  {total_new:,} new URLs  →  {OUTPUT_CSV}")
 
 
+# ─────────────────────────────────────────────
+# ENTRY POINT
+# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Collect GDELT article URLs for El Salvador.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Query GDELT Doc API week-by-week (default):
+  python3 collect/gdelt.py
+
+  # Process a BigQuery export instead:
+  python3 collect/gdelt.py --bq-input dfd_bq_full.csv
+""",
+    )
+    parser.add_argument(
+        "--bq-input",
+        metavar="PATH",
+        help="Path to a GDELT BigQuery CSV export (dfd_bq_full.csv). "
+             "Skips API queries and processes the file directly.",
+    )
+    args = parser.parse_args()
+
+    if args.bq_input:
+        run_bq_mode(args.bq_input)
+    else:
+        run_api_mode()
